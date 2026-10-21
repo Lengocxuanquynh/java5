@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đơn Mua Của Tôi | PolyShop</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" th:href="@{/static/css/polyshop.css}">
+</head>
+
+<body>
+  <!-- Navigation Header Fragment -->
+  <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+  <main class="main-content py-4">
+    <div class="container">
+
+      <!-- Page Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold text-dark mb-0">
+          <i class="bi bi-bag-check-fill text-danger me-2"></i>ĐƠN MUA CỦA TÔI
+        </h4>
+        <a th:href="@{/}" class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-cart-plus me-1"></i>Tiếp tục mua hàng
+        </a>
+      </div>
+
+      <!-- Alerts -->
+      <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+
+      <!-- Empty State -->
+      <div th:if="${#lists.isEmpty(orders)}" class="bg-white rounded-3 p-5 text-center shadow-sm">
+        <i class="bi bi-receipt fs-1 text-muted"></i>
+        <h5 class="mt-3 text-muted">Chưa có đơn hàng nào</h5>
+        <p class="text-secondary small">Bạn chưa mua bất kỳ sản phẩm nào trên PolyShop.</p>
+        <a th:href="@{/}" class="btn btn-polyshop-orange px-4 py-2 mt-2">MUA NGAY</a>
+      </div>
+
+      <!-- Orders List -->
+      <div th:if="${!#lists.isEmpty(orders)}" class="d-flex flex-column gap-3">
+        <div th:each="ord : ${orders}" class="bg-white rounded-3 shadow-sm p-4 border">
+          <!-- Order Card Header -->
+          <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-danger">PolyMall</span>
+              <span class="fw-bold small text-dark" th:text="'Mã đơn: #' + ${ord.id}">#1</span>
+              <span class="text-muted small">| Ngày đặt: <span th:text="${ord.date}">2026-09-26</span></span>
+            </div>
+            <div>
+              <span th:if="${ord.status == 1}" class="badge bg-warning text-dark"><i
+                  class="bi bi-hourglass-split me-1"></i>Chờ xác nhận</span>
+              <span th:if="${ord.status == 2}" class="badge bg-info text-white"><i
+                  class="bi bi-check2-circle me-1"></i>Đã xác nhận</span>
+              <span th:if="${ord.status == 3}" class="badge bg-primary text-white"><i class="bi bi-truck me-1"></i>Đang
+                giao hàng</span>
+              <span th:if="${ord.status == 4}" class="badge bg-primary-subtle text-primary border border-primary"><i
+                  class="bi bi-box-seam me-1"></i>Đã giao hàng</span>
+              <span th:if="${ord.status == 5}" class="badge bg-success text-white"><i
+                  class="bi bi-patch-check-fill me-1"></i>Đã nhận hàng</span>
+              <span th:if="${ord.status == 6}" class="badge bg-secondary text-white"><i
+                  class="bi bi-x-circle me-1"></i>Đã hủy</span>
+            </div>
+          </div>
+
+          <!-- Order Items -->
+          <div class="mb-3">
+            <div th:if="${ord.orderDetails == null || ord.orderDetails.isEmpty()}" class="py-2 text-muted small">
+              <i class="bi bi-info-circle me-1"></i>Đơn hàng gồm các sản phẩm đã được ghi nhận vào hệ thống.
+            </div>
+            <div th:each="det : ${ord.orderDetails}"
+              class="d-flex justify-content-between align-items-center py-2 border-bottom">
+              <div class="d-flex align-items-center gap-3">
+                <img th:if="${det.product != null && det.product.images != null && !det.product.images.isEmpty()}"
+                  th:src="@{'/uploads/' + ${det.product.images[0].name}}" class="rounded border"
+                  style="width: 60px; height: 60px; object-fit: cover;"
+                  onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80';">
+                <img th:if="${det.product == null || det.product.images == null || det.product.images.isEmpty()}"
+                  src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80" class="rounded border"
+                  style="width: 60px; height: 60px; object-fit: cover;">
+                <div>
+                  <h6 class="mb-1 text-dark fw-semibold"
+                    th:text="${det.product != null ? det.product.name : 'Sản phẩm'}">Tên sản phẩm</h6>
+                  <span class="text-muted small">Số lượng: <strong th:text="${det.quantity}">1</strong></span>
+                </div>
+              </div>
+              <div class="text-end">
+                <span class="fw-bold text-danger"
+                  th:text="${#numbers.formatDecimal(det.price * det.quantity, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0
+                  ₫</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Footer -->
+          <div class="d-flex flex-wrap justify-content-between align-items-center pt-2">
+            <div class="small text-muted text-truncate" style="max-width: 500px;">
+              <i class="bi bi-geo-alt me-1 text-danger"></i>Giao đến: <span th:text="${ord.address}">Địa chỉ</span>
+              <span th:if="${ord.updatedAt != null}" class="d-block mt-1" style="font-size: 11px;">
+                <i class="bi bi-clock-history me-1"></i>Cập nhật: <span
+                  th:text="${#dates.format(ord.updatedAt, 'dd/MM/yyyy HH:mm:ss')}">2026-10-20 18:00</span>
+              </span>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+              <div>
+                <span class="small text-secondary">Thành tiền: </span>
+                <span class="fs-5 fw-bold text-danger"
+                  th:text="${#numbers.formatDecimal(ord.totalPrice, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
+              </div>
+
+              <!-- Cancel Button if status == 1 (Chờ xác nhận) -->
+              <form th:if="${ord.status == 1}" th:action="@{'/user/order/cancel/' + ${ord.id}}" method="post"
+                onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?');">
+                <button type="submit" class="btn btn-outline-danger btn-sm">Hủy Đơn Hàng</button>
+              </form>
+
+              <!-- Confirm Received Button: CHỈ khi status == 4 (Đã giao hàng) theo yêu cầu của thầy -->
+              <form th:if="${ord.status == 4}" th:action="@{'/user/order/received/' + ${ord.id}}" method="post"
+                onsubmit="return confirm('Bạn xác nhận đã nhận được đầy đủ hàng hóa cho đơn hàng này?');">
+                <button type="submit" class="btn btn-polyshop-orange btn-sm">
+                  <i class="bi bi-box2-heart me-1"></i>Đã Nhận Hàng
+                </button>
+              </form>
+
+              <a th:href="@{'/user/order/' + ${ord.id}}" class="btn btn-sm btn-outline-secondary">Chi Tiết</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer Fragment -->
+  <div th:replace="~{fragments/footer :: footer}"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

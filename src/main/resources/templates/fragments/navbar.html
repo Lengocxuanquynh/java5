@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <div th:fragment="navbar">
+    <!-- Main Navigation Header -->
+    <header class="polyshop-header">
+      <div class="container d-flex align-items-center justify-content-between">
+        <!-- Logo -->
+        <a th:href="@{/}" class="polyshop-logo">
+          <i class="bi bi-bag-heart-fill"></i>
+          <span>PolyShop</span>
+        </a>
+
+        <!-- Search Bar -->
+        <div class="flex-grow-1 mx-4" style="max-width: 720px;">
+          <form th:action="@{/search}" method="get" class="polyshop-search-box">
+            <input type="text" name="keyword" th:value="${searchKeyword}" placeholder="PolyShop bao ship 0Đ - Tìm kiếm sản phẩm, thương hiệu..." required>
+            <button type="submit">
+              <i class="bi bi-search me-1"></i>
+            </button>
+          </form>
+          <div class="d-flex gap-3 mt-1 text-white-50" style="font-size: 11px; padding-left: 4px;">
+            <a th:href="@{/category/1}" class="text-white-50 text-decoration-none">Điện thoại</a>
+            <a th:href="@{/category/2}" class="text-white-50 text-decoration-none">Laptop</a>
+            <a th:href="@{/category/3}" class="text-white-50 text-decoration-none">Thiết bị điện tử</a>
+            <a th:href="@{/category/1}" class="text-white-50 text-decoration-none">Tai nghe</a>
+            <a th:href="@{/category/2}" class="text-white-50 text-decoration-none">Bàn phím</a>
+          </div>
+        </div>
+
+        <!-- Cart, Orders & User Auth -->
+        <div class="d-flex align-items-center gap-3">
+          <a th:href="${currentUser != null && currentUser.role == 1 ? '/admin/orders' : '/user/orders'}"
+             class="text-white text-decoration-none d-flex align-items-center gap-1 py-1 px-2 rounded-2"
+             style="background: rgba(255,255,255,0.18); transition: background 0.2s;"
+             th:title="${currentUser != null && currentUser.role == 1 ? 'Quản Lý Đơn Hàng' : 'Đơn Mua Của Tôi'}">
+            <i class="bi bi-receipt fs-5"></i>
+            <span class="small fw-semibold d-none d-md-inline"
+                  th:text="${currentUser != null && currentUser.role == 1 ? 'Quản Lý Đơn' : 'Đơn Mua'}">Đơn Mua</span>
+          </a>
+          <a th:href="@{/cart}" class="polyshop-cart-icon-btn position-relative" title="Giỏ hàng">
+            <i class="bi bi-cart3"></i>
+            <span class="polyshop-cart-badge" th:text="${cartCount ?: 0}">0</span>
+          </a>
+
+          <!-- If Not Logged In -->
+          <th:block th:if="${currentUser == null}">
+            <a th:href="@{/register}" class="text-white text-decoration-none fw-semibold">Đăng Ký</a>
+            <span class="text-white-50">|</span>
+            <a th:href="@{/login}" class="text-white text-decoration-none fw-semibold">Đăng Nhập</a>
+          </th:block>
+
+          <!-- If Logged In -->
+          <th:block th:if="${currentUser != null}">
+            <div class="dropdown">
+              <a class="dropdown-toggle text-white fw-bold text-decoration-none d-flex align-items-center gap-1" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle fs-5"></i>
+                <span th:text="${currentUser.name}">Người dùng</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li><a class="dropdown-item" th:href="@{/user/profile}"><i class="bi bi-person me-2"></i>Hồ sơ tài khoản</a></li>
+                <li th:if="${currentUser.role != 1}"><a class="dropdown-item" th:href="@{/user/orders}"><i class="bi bi-bag-check me-2"></i>Đơn Mua của tôi</a></li>
+                <li th:if="${currentUser.role == 1}"><a class="dropdown-item" th:href="@{/admin/orders}"><i class="bi bi-receipt me-2"></i>Quản lý đơn hàng sàn</a></li>
+                <li th:if="${currentUser.role == 1}"><hr class="dropdown-divider"></li>
+                <li th:if="${currentUser.role == 1}"><a class="dropdown-item text-danger fw-bold" th:href="@{/admin}"><i class="bi bi-speedometer2 me-2"></i>Quản trị Shop (Admin)</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-muted" th:href="@{/logout}"><i class="bi bi-box-arrow-right me-2"></i>Đăng Xuất</a></li>
+              </ul>
+            </div>
+          </th:block>
+        </div>
+      </div>
+    </header>
+  </div>
+</body>
+</html>

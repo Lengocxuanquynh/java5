@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Người Dùng | PolyShop Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" th:href="@{/static/css/polyshop.css}">
+</head>
+<body class="bg-light">
+
+  <!-- Admin Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-danger d-flex align-items-center gap-2" th:href="@{/admin}">
+        <i class="bi bi-shield-lock-fill"></i>
+        <span>PolyShop Admin</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="adminNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" th:href="@{/admin}"><i class="bi bi-speedometer2 me-1"></i>Tổng Quan</a></li>
+          <li class="nav-item"><a class="nav-link" th:href="@{/admin/product-form}"><i class="bi bi-box-seam me-1"></i>Sản Phẩm</a></li>
+          <li class="nav-item"><a class="nav-link" th:href="@{/admin/category-form}"><i class="bi bi-tags me-1"></i>Danh Mục</a></li>
+          <li class="nav-item"><a class="nav-link" th:href="@{/admin/orders}"><i class="bi bi-receipt me-1"></i>Đơn Hàng</a></li>
+          <li class="nav-item"><a class="nav-link active" th:href="@{/admin/user-form}"><i class="bi bi-people me-1"></i>Người Dùng</a></li>
+        </ul>
+        <div class="d-flex align-items-center gap-3">
+          <a th:href="@{/}" class="btn btn-outline-light btn-sm" target="_blank"><i class="bi bi-shop me-1"></i>Trang Khách</a>
+          <a th:href="@{/logout}" class="btn btn-danger btn-sm"><i class="bi bi-box-arrow-right me-1"></i>Đăng Xuất</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="py-4">
+    <div class="container">
+
+      <!-- Alerts -->
+      <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+
+      <div class="row">
+        <!-- Users List Table (Full-width) -->
+        <div class="col-12">
+          <div class="bg-white rounded-3 p-4 shadow-sm border">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+              <div>
+                <h5 class="fw-bold text-dark mb-1">
+                  <i class="bi bi-people-fill text-danger me-2"></i>Danh Sách Người Dùng
+                </h5>
+                <p class="text-muted small mb-0">Quản lý và theo dõi tất cả tài khoản trong hệ thống</p>
+              </div>
+              <span class="badge bg-secondary px-3 py-2 fs-6" th:text="${#lists.size(users)} + ' tài khoản'">0 tài khoản</span>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 60px;">ID</th>
+                    <th>Tên đăng nhập</th>
+                    <th>Họ và tên</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end" style="width: 180px;">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr th:each="u : ${users}">
+                    <td class="fw-bold text-muted" th:text="'#' + ${u.id}">#1</td>
+                    <td class="fw-semibold text-dark">
+                      <i class="bi bi-person-circle me-1 text-secondary"></i>
+                      <span th:text="${u.username}">admin</span>
+                    </td>
+                    <td th:text="${u.name}">Quản trị viên</td>
+                    <td>
+                      <a th:href="'mailto:' + ${u.email}" class="text-decoration-none text-muted" th:text="${u.email}">admin@polyshop.vn</a>
+                    </td>
+                    <td th:text="${u.phone}">0987654321</td>
+                    <td>
+                      <span th:if="${u.role == 1}" class="badge bg-danger"><i class="bi bi-shield-fill-check me-1"></i>Admin</span>
+                      <span th:unless="${u.role == 1}" class="badge bg-secondary"><i class="bi bi-person me-1"></i>User</span>
+                    </td>
+                    <td>
+                      <span th:if="${u.status}" class="badge bg-success-subtle text-success border border-success">
+                        <i class="bi bi-check-circle-fill me-1"></i>Đang hoạt động
+                      </span>
+                      <span th:unless="${u.status}" class="badge bg-danger-subtle text-danger border border-danger">
+                        <i class="bi bi-lock-fill me-1"></i>Đã bị khóa
+                      </span>
+                    </td>
+                    <td class="text-end">
+                      <!-- Khóa / Mở khóa tài khoản -->
+                      <a th:if="${u.role != 1 && u.status}" th:href="@{'/admin/user/toggle-status/' + ${u.id}}" 
+                         class="btn btn-sm btn-outline-warning me-1" title="Khóa tài khoản"
+                         onclick="return confirm('Bạn có chắc muốn KHÓA tài khoản này?');">
+                        <i class="bi bi-lock-fill me-1"></i>Khóa
+                      </a>
+                      <a th:if="${u.role != 1 && !u.status}" th:href="@{'/admin/user/toggle-status/' + ${u.id}}" 
+                         class="btn btn-sm btn-outline-success me-1" title="Mở khóa tài khoản"
+                         onclick="return confirm('Bạn có chắc muốn MỞ KHÓA tài khoản này?');">
+                        <i class="bi bi-unlock-fill me-1"></i>Mở
+                      </a>
+
+                      <!-- Xóa tài khoản -->
+                      <a th:if="${u.role != 1}" th:href="@{'/admin/user/delete/' + ${u.id}}" 
+                         class="btn btn-sm btn-outline-danger" title="Xóa tài khoản"
+                         onclick="return confirm('Bạn có chắc muốn xóa tài khoản này? Thao tác này không thể hoàn tác!');">
+                        <i class="bi bi-trash me-1"></i>Xóa
+                      </a>
+
+                      <!-- Tài khoản Admin mặc định -->
+                      <span th:if="${u.role == 1}" class="badge bg-light text-muted border">
+                        <i class="bi bi-shield-lock me-1"></i>Mặc định
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

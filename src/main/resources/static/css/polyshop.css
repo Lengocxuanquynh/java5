@@ -1,0 +1,372 @@
+:root {
+  --polyshop-orange: #ee4d2d;
+  --polyshop-orange-hover: #d73211;
+  --polyshop-orange-light: #feeee8;
+  --polyshop-dark: #222222;
+  --polyshop-gray: #757575;
+  --polyshop-bg: #f5f5f5;
+  --polyshop-border: #e8e8e8;
+
+  /* Backward Compatibility Aliases */
+  --shopee-orange: var(--polyshop-orange);
+  --shopee-orange-hover: var(--polyshop-orange-hover);
+  --shopee-orange-light: var(--polyshop-orange-light);
+  --shopee-dark: var(--polyshop-dark);
+  --shopee-gray: var(--polyshop-gray);
+  --shopee-bg: var(--polyshop-bg);
+  --shopee-border: var(--polyshop-border);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--polyshop-bg);
+  color: var(--polyshop-dark);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+}
+
+/* PolyShop Top Bar */
+.polyshop-top-bar, .shopee-top-bar {
+  background: linear-gradient(-180deg, #f53d2d, #f63);
+  color: #fff;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.polyshop-top-bar a, .shopee-top-bar a {
+  color: #fff;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.polyshop-top-bar a:hover, .shopee-top-bar a:hover {
+  opacity: 0.85;
+}
+
+/* PolyShop Main Header */
+.polyshop-header, .shopee-header {
+  background: linear-gradient(-180deg, #f53d2d, #f63);
+  color: #fff;
+  padding: 14px 0 18px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.polyshop-logo, .shopee-logo {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff !important;
+  text-decoration: none;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.polyshop-logo i, .shopee-logo i {
+  font-size: 32px;
+}
+
+.polyshop-search-box, .shopee-search-box {
+  background: #fff;
+  border-radius: 4px;
+  padding: 3px 4px 3px 12px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.polyshop-search-box input, .shopee-search-box input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 14px;
+}
+
+.polyshop-search-box button, .shopee-search-box button {
+  background: var(--polyshop-orange);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 8px 22px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.polyshop-search-box button:hover, .shopee-search-box button:hover {
+  background: var(--polyshop-orange-hover);
+}
+
+.polyshop-cart-icon-btn, .shopee-cart-icon-btn {
+  color: #fff;
+  font-size: 26px;
+  position: relative;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.polyshop-cart-badge, .shopee-cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -12px;
+  background-color: #fff;
+  color: var(--polyshop-orange);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 12px;
+  border: 2px solid var(--polyshop-orange);
+}
+
+/* Category Navigation Bar */
+.category-strip {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.category-pill {
+  display: inline-block;
+  padding: 6px 14px;
+  margin: 3px;
+  background-color: #f8f9fa;
+  border: 1px solid var(--polyshop-border);
+  border-radius: 20px;
+  color: #333;
+  text-decoration: none;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.category-pill:hover, .category-pill.active {
+  background-color: var(--polyshop-orange-light);
+  border-color: var(--polyshop-orange);
+  color: var(--polyshop-orange);
+  font-weight: 600;
+}
+
+/* Product Card */
+.polyshop-card, .shopee-card {
+  background: #fff;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border: 1px solid transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  text-decoration: none;
+  color: inherit;
+}
+
+.polyshop-card:hover, .shopee-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  border-color: var(--polyshop-orange);
+}
+
+.polyshop-card-img-wrapper, .shopee-card-img-wrapper {
+  position: relative;
+  padding-top: 100%;
+  background: #fafafa;
+  overflow: hidden;
+}
+
+.polyshop-card-img, .shopee-card-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.polyshop-card:hover .polyshop-card-img, .shopee-card:hover .shopee-card-img {
+  transform: scale(1.03);
+}
+
+.polyshop-card-body, .shopee-card-body {
+  padding: 10px 12px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.polyshop-card-title, .shopee-card-title {
+  font-size: 13px;
+  line-height: 18px;
+  height: 36px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.polyshop-badge-mall, .shopee-badge-mall {
+  background: #d0011b;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 2px;
+  margin-right: 4px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.polyshop-card-price, .shopee-card-price {
+  color: var(--polyshop-orange);
+  font-size: 16px;
+  font-weight: 700;
+  margin-top: auto;
+}
+
+.polyshop-card-footer, .shopee-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--polyshop-gray);
+  margin-top: 6px;
+}
+
+.btn-polyshop-orange, .btn-shopee-orange {
+  background-color: var(--polyshop-orange);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-polyshop-orange:hover, .btn-shopee-orange:hover {
+  background-color: var(--polyshop-orange-hover);
+  color: #fff;
+}
+
+.btn-polyshop-outline, .btn-shopee-outline {
+  border: 1px solid var(--polyshop-orange);
+  color: var(--polyshop-orange);
+  background-color: var(--polyshop-orange-light);
+  font-weight: 600;
+}
+
+.btn-polyshop-outline:hover, .btn-shopee-outline:hover {
+  background-color: #fcdbd0;
+  color: var(--polyshop-orange);
+}
+
+/* Banner Carousel */
+.polyshop-hero-banner, .shopee-hero-banner {
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #ff7337, #ee4d2d);
+  color: #fff;
+  padding: 30px;
+}
+
+/* Footer */
+.polyshop-footer, .shopee-footer {
+  background: #fff;
+  border-top: 4px solid var(--polyshop-orange);
+  padding: 40px 0 20px 0;
+  margin-top: 40px;
+  font-size: 13px;
+  color: #666;
+}
+
+.polyshop-footer h6, .shopee-footer h6 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #333;
+  margin-bottom: 14px;
+}
+
+.polyshop-footer ul, .shopee-footer ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.polyshop-footer li, .shopee-footer li {
+  margin-bottom: 8px;
+}
+
+.polyshop-footer a, .shopee-footer a {
+  color: #666;
+  text-decoration: none;
+}
+
+.polyshop-footer a:hover, .shopee-footer a:hover {
+  color: var(--polyshop-orange);
+}
+
+/* User Dropdown hover effect & styling */
+.polyshop-top-bar .dropdown:hover .dropdown-menu,
+.shopee-top-bar .dropdown:hover .dropdown-menu,
+.polyshop-header .dropdown:hover .dropdown-menu {
+  display: block;
+  margin-top: 2px;
+}
+
+.polyshop-top-bar .dropdown-menu,
+.shopee-top-bar .dropdown-menu,
+.polyshop-header .dropdown-menu {
+  z-index: 1050;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+  min-width: 195px;
+  padding: 6px 0;
+}
+
+.polyshop-top-bar .dropdown-menu a,
+.polyshop-top-bar .dropdown-item,
+.shopee-top-bar .dropdown-menu a,
+.shopee-top-bar .dropdown-item,
+.polyshop-header .dropdown-menu a,
+.polyshop-header .dropdown-item {
+  font-size: 13px;
+  padding: 8px 16px;
+  color: #212529 !important;
+  text-decoration: none !important;
+  display: flex;
+  align-items: center;
+  opacity: 1 !important;
+  transition: background 0.15s, color 0.15s;
+}
+
+.polyshop-top-bar .dropdown-menu a:hover,
+.polyshop-top-bar .dropdown-item:hover,
+.shopee-top-bar .dropdown-menu a:hover,
+.shopee-top-bar .dropdown-item:hover,
+.polyshop-header .dropdown-menu a:hover,
+.polyshop-header .dropdown-item:hover {
+  background-color: var(--polyshop-orange-light) !important;
+  color: var(--polyshop-orange) !important;
+  opacity: 1 !important;
+}
+
+.polyshop-top-bar .dropdown-item.text-danger,
+.shopee-top-bar .dropdown-item.text-danger,
+.polyshop-header .dropdown-item.text-danger {
+  color: #dc3545 !important;
+}
+
+.polyshop-top-bar .dropdown-item.text-muted,
+.shopee-top-bar .dropdown-item.text-muted,
+.polyshop-header .dropdown-item.text-muted {
+  color: #6c757d !important;
+}

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Sản Phẩm | PolyShop Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" th:href="@{/static/css/polyshop.css}">
+</head>
+<body class="bg-light">
+
+  <!-- Top Admin Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-danger d-flex align-items-center gap-2" th:href="@{/admin}">
+        <i class="bi bi-shield-lock-fill"></i>
+        <span>PolyShop Admin</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="adminNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" th:href="@{/admin}"><i class="bi bi-speedometer2 me-1"></i>Tổng Quan</a></li>
+          <li class="nav-item"><a class="nav-link active" th:href="@{/admin/product-form}"><i class="bi bi-box-seam me-1"></i>Sản Phẩm</a></li>
+          <li class="nav-item"><a class="nav-link" th:href="@{/admin/category-form}"><i class="bi bi-tags me-1"></i>Danh Mục</a></li>
+          <li class="nav-item"><a class="nav-link" th:href="@{/admin/orders}"><i class="bi bi-receipt me-1"></i>Đơn Hàng</a></li>
+          <li class="nav-item"><a class="nav-link" th:href="@{/admin/user-form}"><i class="bi bi-people me-1"></i>Người Dùng</a></li>
+        </ul>
+        <div class="d-flex align-items-center gap-3">
+          <a th:href="@{/}" class="btn btn-outline-light btn-sm" target="_blank"><i class="bi bi-shop me-1"></i>Trang Khách</a>
+          <a th:href="@{/logout}" class="btn btn-danger btn-sm"><i class="bi bi-box-arrow-right me-1"></i>Đăng Xuất</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="py-4">
+    <div class="container">
+
+      <!-- Alerts -->
+      <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+
+      <!-- Product Form Card -->
+      <div class="bg-white rounded-3 p-4 shadow-sm mb-4 border">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+          <h4 class="fw-bold text-dark mb-0">
+            <i class="bi bi-plus-circle-fill text-danger me-2"></i>
+            <span th:if="${bean.id != null && bean.id > 0}">Cập Nhật Sản Phẩm #<span th:text="${bean.id}"></span></span>
+            <span th:unless="${bean.id != null && bean.id > 0}">Thêm Sản Phẩm Mới</span>
+          </h4>
+          <a th:if="${bean.id != null && bean.id > 0}" th:href="@{/admin/product-form}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>Thêm Mới Khác
+          </a>
+        </div>
+
+        <form method="post" th:action="@{/admin/product-form}" th:object="${bean}" enctype="multipart/form-data">
+          <input type="hidden" th:field="*{id}">
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="name" class="form-label small fw-semibold">Tên sản phẩm *</label>
+              <input type="text" class="form-control" id="name" th:field="*{name}" placeholder="Ví dụ: Áo khoác dù bomber PolyShop"
+                     th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''">
+              <small class="text-danger" th:errors="*{name}"></small>
+            </div>
+
+            <div class="col-md-6">
+              <label for="category" class="form-label small fw-semibold">Danh mục *</label>
+              <select th:field="*{category}" class="form-select" id="category"
+                      th:classappend="${#fields.hasErrors('category')} ? 'is-invalid' : ''">
+                <option value="0">---- Chọn danh mục ----</option>
+                <th:block th:each="cat : ${categories}">
+                  <option th:value="${cat.id}" th:text="${cat.name}"></option>
+                </th:block>
+              </select>
+              <small class="text-danger" th:errors="*{category}"></small>
+            </div>
+
+            <div class="col-md-3">
+              <label for="price" class="form-label small fw-semibold">Giá niêm yết (VNĐ) *</label>
+              <input type="number" class="form-control" id="price" th:field="*{price}" min="1000" step="1000"
+                     th:classappend="${#fields.hasErrors('price')} ? 'is-invalid' : ''" oninput="calculateSalePrice()">
+              <small class="text-danger" th:errors="*{price}"></small>
+            </div>
+
+            <div class="col-md-3">
+              <label for="discount" class="form-label small fw-semibold">% Giảm giá (0 - 100)</label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="discount" th:field="*{discount}" min="0" max="100" step="1"
+                       th:classappend="${#fields.hasErrors('discount')} ? 'is-invalid' : ''" oninput="calculateSalePrice()">
+                <span class="input-group-text">%</span>
+              </div>
+              <small class="text-danger" th:errors="*{discount}"></small>
+              <div class="small text-muted mt-1" id="salePricePreview"></div>
+            </div>
+
+            <div class="col-md-3">
+              <label for="quantity" class="form-label small fw-semibold">Số lượng trong kho *</label>
+              <input type="number" class="form-control" id="quantity" th:field="*{quantity}" min="0"
+                     th:classappend="${#fields.hasErrors('quantity')} ? 'is-invalid' : ''">
+              <small class="text-danger" th:errors="*{quantity}"></small>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label small fw-semibold">Trạng thái hiển thị</label>
+              <div class="d-flex gap-3 mt-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" th:field="*{status}" id="status1" value="1">
+                  <label class="form-check-label" for="status1">Hiển thị</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" th:field="*{status}" id="status2" value="2">
+                  <label class="form-check-label text-muted" for="status2">Ẩn</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="detail" class="form-label small fw-semibold">Chi tiết sản phẩm</label>
+              <textarea class="form-control" id="detail" th:field="*{detail}" rows="4"
+                        placeholder="Ví dụ: Xuất xứ: Việt Nam&#10;Chất liệu: Cotton 100%&#10;Bảo hành: 12 tháng&#10;Kích thước: M, L, XL"></textarea>
+              <div class="form-text small text-muted">Các thông số kỹ thuật, chất liệu, xuất xứ, bảo hành...</div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="description" class="form-label small fw-semibold">Mô tả sản phẩm</label>
+              <textarea class="form-control" id="description" th:field="*{description}" rows="4"
+                        placeholder="Nhập giới thiệu chi tiết sản phẩm, công dụng, đặc điểm nổi bật..."></textarea>
+              <div class="form-text small text-muted">Giới thiệu tổng quan về sản phẩm cho khách hàng.</div>
+            </div>
+
+            <div class="col-12">
+              <label for="formFile" class="form-label small fw-semibold">Hình ảnh sản phẩm (có thể chọn nhiều ảnh)</label>
+              <input name="images" class="form-control" type="file" id="formFile" multiple accept="image/*">
+              <div class="form-text small">Hỗ trợ các định dạng JPG, PNG, GIF. Nếu cập nhật không chọn ảnh mới thì sẽ giữ ảnh cũ.</div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-top d-flex gap-2">
+            <button type="submit" class="btn btn-polyshop-orange px-4 py-2 fw-semibold">
+              <i class="bi bi-save me-1"></i>Lưu Sản Phẩm
+            </button>
+            <a th:href="@{/admin/product-form}" class="btn btn-outline-secondary px-3 py-2">
+              Làm Mới
+            </a>
+          </div>
+        </form>
+      </div>
+
+      <!-- Existing Products Table -->
+      <div class="bg-white rounded-3 p-4 shadow-sm border">
+        <h5 class="fw-bold text-dark mb-3">
+          <i class="bi bi-table text-danger me-2"></i>Danh Sách Sản Phẩm Đang Có
+        </h5>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle small">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 50px;">ID</th>
+                <th style="width: 80px;">Hình ảnh</th>
+                <th>Tên sản phẩm</th>
+                <th>Danh mục</th>
+                <th>Giá bán</th>
+                <th>Số lượng kho</th>
+                <th>Trạng thái</th>
+                <th class="text-end" style="width: 140px;">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="p : ${products}">
+                <td class="fw-bold" th:text="${p.id}">1</td>
+                <td>
+                  <img th:if="${p.images != null && !p.images.isEmpty()}"
+                       th:src="@{'/uploads/' + ${p.images[0].name}}"
+                       class="rounded border" style="width: 50px; height: 50px; object-fit: cover;"
+                       onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80';">
+                  <img th:if="${p.images == null || p.images.isEmpty()}"
+                       src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80"
+                       class="rounded border" style="width: 50px; height: 50px; object-fit: cover;">
+                </td>
+                <td>
+                  <div class="fw-semibold" th:text="${p.name}">Tên sản phẩm</div>
+                  <a th:href="@{'/product/' + ${p.id}}" class="text-muted small text-decoration-none" target="_blank">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Xem trang bán
+                  </a>
+                </td>
+                <td th:text="${p.category.name}">Danh mục</td>
+                <td>
+                  <div th:if="${p.discount > 0}">
+                    <span class="fw-bold text-danger" th:text="${#numbers.formatDecimal(p.salePrice, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
+                    <span class="badge bg-danger ms-1" th:text="'-' + ${p.discount} + '%'">-10%</span>
+                    <div class="text-muted text-decoration-line-through small" th:text="${#numbers.formatDecimal(p.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</div>
+                  </div>
+                  <div th:if="${p.discount <= 0}">
+                    <span class="fw-bold text-dark" th:text="${#numbers.formatDecimal(p.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
+                  </div>
+                </td>
+                <td th:text="${p.quantity}">10</td>
+                <td>
+                  <span th:if="${p.status}" class="badge bg-success">Hiển thị</span>
+                  <span th:unless="${p.status}" class="badge bg-secondary">Ẩn</span>
+                </td>
+                <td class="text-end">
+                  <a th:href="@{'/admin/product-form/' + ${p.id}}" class="btn btn-sm btn-outline-primary me-1" title="Sửa">
+                    <i class="bi bi-pencil-square"></i>
+                  </a>
+                  <a th:href="@{'/admin/product/delete/' + ${p.id}}" class="btn btn-sm btn-outline-danger" title="Xóa"
+                     onclick="return confirm('Bạn có chắc muốn xóa/ẩn sản phẩm này?');">
+                    <i class="bi bi-trash"></i>
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function calculateSalePrice() {
+      const priceInput = document.getElementById('price');
+      const discountInput = document.getElementById('discount');
+      const preview = document.getElementById('salePricePreview');
+      if (!priceInput || !discountInput || !preview) return;
+
+      const price = parseFloat(priceInput.value) || 0;
+      const discount = parseFloat(discountInput.value) || 0;
+      if (discount > 0 && discount <= 100 && price > 0) {
+        const sale = Math.round(price * (100 - discount) / 100);
+        preview.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-tag-fill me-1"></i>Giá sau giảm: ' + sale.toLocaleString('vi-VN') + ' ₫</span>';
+      } else {
+        preview.innerHTML = '<span class="text-muted"><i class="bi bi-info-circle me-1"></i>Không giảm giá (Bán đúng giá niêm yết)</span>';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', calculateSalePrice);
+  </script>
+</body>
+</html>
