@@ -32,9 +32,6 @@ public class Product {
 	@Column(name = "price", nullable = false)
 	private int price;
 
-	@Column(name = "discount", nullable = false)
-	private int discount = 0; // % giảm giá (0 - 100)
-
 	@Column(name = "quantity", nullable = false)
 	private int quantity;
 
@@ -58,9 +55,6 @@ public class Product {
 	List<CartDetail> cartDetails;
 
 	public int getSalePrice() {
-		if (discount > 0 && discount <= 100) {
-			return (int) Math.round(price * (100.0 - discount) / 100.0);
-		}
 		return price;
 	}
 
@@ -68,19 +62,6 @@ public class Product {
 		this.id = id;
 		this.name = name;
 		this.price = price;
-		this.discount = 0;
-		this.quantity = quantity;
-		this.status = status;
-		this.category = category;
-		this.images = images;
-		this.cartDetails = cartDetails;
-	}
-
-	public Product(int id, String name, int price, int discount, int quantity, boolean status, Category category, List<Image> images, List<CartDetail> cartDetails) {
-		this.id = id;
-		this.name = name;
-		this.price = price;
-		this.discount = discount;
 		this.quantity = quantity;
 		this.status = status;
 		this.category = category;

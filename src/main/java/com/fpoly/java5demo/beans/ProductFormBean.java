@@ -28,10 +28,6 @@ public class ProductFormBean {
 	@Min(value = 1000, message = "Giá sản phẩm phải từ 1.000 VNĐ trở lên")
 	private int price = 10000;
 
-	@Min(value = 0, message = "Phần trăm giảm giá phải từ 0% trở lên")
-	@Max(value = 100, message = "Phần trăm giảm giá tối đa là 100%")
-	private int discount = 0;
-
 	@Min(value = 0, message = "Số lượng không được âm")
 	private int quantity = 1;
 

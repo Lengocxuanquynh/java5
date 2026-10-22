@@ -70,7 +70,6 @@ public class ProductController {
 				prodBean.setId(p.getId());
 				prodBean.setName(p.getName());
 				prodBean.setPrice(p.getPrice());
-				prodBean.setDiscount(p.getDiscount());
 				prodBean.setQuantity(p.getQuantity());
 				prodBean.setStatus(p.isStatus() ? 1 : 2);
 				prodBean.setDescription(p.getDescription());
@@ -147,7 +146,6 @@ public class ProductController {
 
 		product.setName(bean.getName());
 		product.setPrice(bean.getPrice());
-		product.setDiscount(bean.getDiscount());
 		product.setQuantity(bean.getQuantity());
 		product.setStatus(bean.getStatus() == 1);
 		product.setCategory(category);

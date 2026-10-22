@@ -95,11 +95,7 @@
                     </div>
                   </td>
                   <td class="text-center small text-secondary">
-                    <span th:text="${#numbers.formatDecimal(item.product.salePrice, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0
-                      ₫</span>
-                    <span th:if="${item.product.discount > 0}" class="text-muted text-decoration-line-through d-block"
-                      style="font-size: 11px;"
-                      th:text="${#numbers.formatDecimal(item.product.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
+                    <span th:text="${#numbers.formatDecimal(item.product.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
                   </td>
                   <td class="text-center small fw-bold" th:text="${item.quantity}">1</td>
                   <td class="text-end fw-bold text-danger"

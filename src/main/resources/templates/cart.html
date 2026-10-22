@@ -83,19 +83,8 @@
 
               <!-- Price -->
               <div class="col-4 col-md-2 text-md-center">
-                <div th:if="${item.product.discount > 0}">
-                  <span class="fw-semibold text-danger d-block"
-                    th:text="${#numbers.formatDecimal(item.product.salePrice, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0
-                    ₫</span>
-                  <span class="text-muted text-decoration-line-through small" style="font-size: 11px;"
-                    th:text="${#numbers.formatDecimal(item.product.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
-                  <span class="badge bg-danger ms-1" style="font-size: 10px;"
-                    th:text="'-' + ${item.product.discount} + '%'">-10%</span>
-                </div>
-                <div th:if="${item.product.discount <= 0}">
-                  <span class="fw-semibold text-secondary"
-                    th:text="${#numbers.formatDecimal(item.product.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
-                </div>
+                <span class="fw-semibold text-danger"
+                  th:text="${#numbers.formatDecimal(item.product.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
               </div>
 
               <!-- Quantity Form -->

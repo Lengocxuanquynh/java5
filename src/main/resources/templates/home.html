@@ -140,10 +140,6 @@
                 <div class="position-absolute top-0 start-0 m-1">
                   <span class="badge bg-danger" style="font-size: 10px;">Yêu thích</span>
                 </div>
-                <div th:if="${prod.discount > 0}" class="position-absolute top-0 end-0 m-1">
-                  <span class="badge bg-warning text-dark fw-bold" style="font-size: 10px;"
-                        th:text="'-' + ${prod.discount} + '%'">-25%</span>
-                </div>
               </a>
 
               <div class="shopee-card-body">
@@ -152,9 +148,7 @@
                 </a>
 
                 <div class="d-flex align-items-baseline gap-2 mt-auto">
-                  <span class="shopee-card-price" th:text="${#numbers.formatDecimal(prod.salePrice, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
-                  <span th:if="${prod.discount > 0}" class="text-muted text-decoration-line-through small" style="font-size: 11px;"
-                        th:text="${#numbers.formatDecimal(prod.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
+                  <span class="shopee-card-price" th:text="${#numbers.formatDecimal(prod.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
                 </div>
 
                 <div class="shopee-card-footer">

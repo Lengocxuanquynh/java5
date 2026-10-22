@@ -315,27 +315,13 @@
                   <small class="text-danger" th:errors="*{category}"></small>
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-md-6">
                   <label for="prodPrice" class="form-label small fw-semibold">Giá niêm yết (VNĐ) *</label>
-                  <input type="number" class="form-control" id="prodPrice" th:field="*{price}" min="1000" step="1000" required oninput="calculateSalePrice()">
+                  <input type="number" class="form-control" id="prodPrice" th:field="*{price}" min="1000" step="1000" required>
                   <small class="text-danger" th:errors="*{price}"></small>
                 </div>
 
-                <div class="col-md-3">
-                  <label for="prodDiscount" class="form-label small fw-semibold">% Giảm giá (0 - 100)</label>
-                  <div class="input-group">
-                    <input type="number" class="form-control" id="prodDiscount" th:field="*{discount}" min="0" max="100" step="1" oninput="calculateSalePrice()">
-                    <span class="input-group-text">%</span>
-                  </div>
-                  <small class="text-danger" th:errors="*{discount}"></small>
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label small fw-semibold">Giá bán thực tế</label>
-                  <input type="text" class="form-control bg-light fw-bold text-danger" id="salePricePreview" readonly value="0 ₫">
-                </div>
-
-                <div class="col-md-3">
+                <div class="col-md-6">
                   <label for="prodQuantity" class="form-label small fw-semibold">Số lượng trong kho *</label>
                   <input type="number" class="form-control" id="prodQuantity" th:field="*{quantity}" min="0" required>
                   <small class="text-danger" th:errors="*{quantity}"></small>
@@ -427,15 +413,7 @@
                       <span class="badge bg-light text-dark border" th:text="${p.category != null ? p.category.name : 'N/A'}">Danh mục</span>
                     </td>
                     <td>
-                      <div th:if="${p.discount > 0}">
-                        <span class="fw-bold text-danger" th:text="${#numbers.formatDecimal(p.salePrice, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
-                        <span class="badge bg-danger ms-1" style="font-size: 10px;" th:text="'-' + ${p.discount} + '%'">-10%</span>
-                        <div class="text-muted text-decoration-line-through small" style="font-size: 11px;"
-                             th:text="${#numbers.formatDecimal(p.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</div>
-                      </div>
-                      <div th:if="${p.discount <= 0}">
-                        <span class="fw-bold text-dark" th:text="${#numbers.formatDecimal(p.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
-                      </div>
+                      <span class="fw-bold text-dark" th:text="${#numbers.formatDecimal(p.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
                     </td>
                     <td>
                       <span th:class="${p.quantity > 5 ? 'badge bg-success-subtle text-success' : (p.quantity > 0 ? 'badge bg-warning-subtle text-warning' : 'badge bg-danger-subtle text-danger')}"
@@ -753,23 +731,8 @@
       }
     }
 
-    // Tự động tính giá bán thực tế khi gõ giá niêm yết hoặc % giảm giá
-    function calculateSalePrice() {
-      const priceInput = document.getElementById('prodPrice');
-      const discountInput = document.getElementById('prodDiscount');
-      const salePreview = document.getElementById('salePricePreview');
-
-      if (!priceInput || !salePreview) return;
-      const price = parseFloat(priceInput.value) || 0;
-      const discount = parseFloat(discountInput ? discountInput.value : 0) || 0;
-      const salePrice = Math.round(price * (100 - discount) / 100);
-
-      salePreview.value = salePrice.toLocaleString('vi-VN') + ' ₫';
-    }
-
     // Khi trang tải xong: kích hoạt tab dựa trên activeTab từ server hoặc hash/query param
     document.addEventListener("DOMContentLoaded", function () {
-      calculateSalePrice();
 
       const serverTab = /*[[${activeTab}]]*/ 'dashboard';
       const urlParams = new URLSearchParams(window.location.search);

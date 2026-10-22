@@ -49,7 +49,6 @@ CREATE TABLE products (
     id INT IDENTITY(1,1) PRIMARY KEY,
     name NVARCHAR(200) NOT NULL,
     price INT NOT NULL,
-    discount INT NOT NULL DEFAULT 0,
     quantity INT NOT NULL DEFAULT 0,
     status BIT NOT NULL DEFAULT 1,
     description NVARCHAR(MAX),

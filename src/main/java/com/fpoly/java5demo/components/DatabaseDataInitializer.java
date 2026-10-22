@@ -120,25 +120,25 @@ public class DatabaseDataInitializer implements CommandLineRunner {
 				Category c3 = savedCategories.get(2); // Thiết Bị Điện Tử
 
 				List<Product> sampleProducts = Arrays.asList(
-						new Product(0, "Điện thoại Apple iPhone 15 Pro Max 256GB Titan Tự Nhiên", 29490000, 10, 35,
+						new Product(0, "Điện thoại Apple iPhone 15 Pro Max 256GB Titan Tự Nhiên", 29490000, 35,
 								true, c1, null, null),
-						new Product(0, "Tai nghe không dây Bluetooth True Wireless chống ồn chủ động", 350000, 25, 150,
+						new Product(0, "Tai nghe không dây Bluetooth True Wireless chống ồn chủ động", 350000, 150,
 								true, c1, null, null),
-						new Product(0, "Củ sạc nhanh 20W Type-C chuẩn PD cho iPhone / iPad", 180000, 15, 200, true, c1,
+						new Product(0, "Củ sạc nhanh 20W Type-C chuẩn PD cho iPhone / iPad", 180000, 200, true, c1,
 								null, null),
-						new Product(0, "Laptop Apple MacBook Air M2 13.6 inch 8GB RAM 256GB SSD", 23990000, 8, 15, true,
+						new Product(0, "Laptop Apple MacBook Air M2 13.6 inch 8GB RAM 256GB SSD", 23990000, 15, true,
 								c2, null, null),
-						new Product(0, "Chuột máy tính không dây công thái học Silent Click", 220000, 20, 80, true, c2,
+						new Product(0, "Chuột máy tính không dây công thái học Silent Click", 220000, 80, true, c2,
 								null, null),
-						new Product(0, "Bàn phím cơ không dây Bluetooth RGB Led 87 phím Hot-swap", 750000, 0, 50, true,
+						new Product(0, "Bàn phím cơ không dây Bluetooth RGB Led 87 phím Hot-swap", 750000, 50, true,
 								c2, null, null),
-						new Product(0, "Loa Bluetooth không dây mini âm bass siêu trầm chống nước", 290000, 30, 120,
+						new Product(0, "Loa Bluetooth không dây mini âm bass siêu trầm chống nước", 290000, 120,
 								true, c3, null, null),
-						new Product(0, "Đồng hồ thông minh Smartwatch theo dõi nhịp tim chống nước", 680000, 15, 60,
+						new Product(0, "Đồng hồ thông minh Smartwatch theo dõi nhịp tim chống nước", 680000, 60,
 								true, c3, null, null));
 
 				productJPA.saveAll(sampleProducts);
-				System.out.println(">>> Đã khởi tạo 8 sản phẩm mẫu công nghệ PolyShop (kèm % giảm giá)");
+				System.out.println(">>> Đã khởi tạo 8 sản phẩm mẫu công nghệ PolyShop");
 			}
 		}
 

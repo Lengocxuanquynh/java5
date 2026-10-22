@@ -86,25 +86,14 @@
               <small class="text-danger" th:errors="*{category}"></small>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
               <label for="price" class="form-label small fw-semibold">Giá niêm yết (VNĐ) *</label>
               <input type="number" class="form-control" id="price" th:field="*{price}" min="1000" step="1000"
-                     th:classappend="${#fields.hasErrors('price')} ? 'is-invalid' : ''" oninput="calculateSalePrice()">
+                     th:classappend="${#fields.hasErrors('price')} ? 'is-invalid' : ''">
               <small class="text-danger" th:errors="*{price}"></small>
             </div>
 
-            <div class="col-md-3">
-              <label for="discount" class="form-label small fw-semibold">% Giảm giá (0 - 100)</label>
-              <div class="input-group">
-                <input type="number" class="form-control" id="discount" th:field="*{discount}" min="0" max="100" step="1"
-                       th:classappend="${#fields.hasErrors('discount')} ? 'is-invalid' : ''" oninput="calculateSalePrice()">
-                <span class="input-group-text">%</span>
-              </div>
-              <small class="text-danger" th:errors="*{discount}"></small>
-              <div class="small text-muted mt-1" id="salePricePreview"></div>
-            </div>
-
-            <div class="col-md-3">
+            <div class="col-md-4">
               <label for="quantity" class="form-label small fw-semibold">Số lượng trong kho *</label>
               <input type="number" class="form-control" id="quantity" th:field="*{quantity}" min="0"
                      th:classappend="${#fields.hasErrors('quantity')} ? 'is-invalid' : ''">
@@ -197,14 +186,7 @@
                 </td>
                 <td th:text="${p.category.name}">Danh mục</td>
                 <td>
-                  <div th:if="${p.discount > 0}">
-                    <span class="fw-bold text-danger" th:text="${#numbers.formatDecimal(p.salePrice, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
-                    <span class="badge bg-danger ms-1" th:text="'-' + ${p.discount} + '%'">-10%</span>
-                    <div class="text-muted text-decoration-line-through small" th:text="${#numbers.formatDecimal(p.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</div>
-                  </div>
-                  <div th:if="${p.discount <= 0}">
-                    <span class="fw-bold text-dark" th:text="${#numbers.formatDecimal(p.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
-                  </div>
+                  <span class="fw-bold text-dark" th:text="${#numbers.formatDecimal(p.price, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
                 </td>
                 <td th:text="${p.quantity}">10</td>
                 <td>
@@ -230,23 +212,5 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    function calculateSalePrice() {
-      const priceInput = document.getElementById('price');
-      const discountInput = document.getElementById('discount');
-      const preview = document.getElementById('salePricePreview');
-      if (!priceInput || !discountInput || !preview) return;
-
-      const price = parseFloat(priceInput.value) || 0;
-      const discount = parseFloat(discountInput.value) || 0;
-      if (discount > 0 && discount <= 100 && price > 0) {
-        const sale = Math.round(price * (100 - discount) / 100);
-        preview.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-tag-fill me-1"></i>Giá sau giảm: ' + sale.toLocaleString('vi-VN') + ' ₫</span>';
-      } else {
-        preview.innerHTML = '<span class="text-muted"><i class="bi bi-info-circle me-1"></i>Không giảm giá (Bán đúng giá niêm yết)</span>';
-      }
-    }
-    document.addEventListener('DOMContentLoaded', calculateSalePrice);
-  </script>
 </body>
 </html>
