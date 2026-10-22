@@ -34,8 +34,16 @@
             <div class="col-sm-4 text-muted">Ngày đặt:</div>
             <div class="col-sm-8 fw-semibold" th:text="${order.date}">2026-09-26</div>
 
+            <div class="col-sm-4 text-muted">Người nhận:</div>
+            <div class="col-sm-8 fw-semibold" th:text="${order.shippingName} + ' (' + ${order.shippingPhone} + ')'">Tên (SĐT)</div>
+
             <div class="col-sm-4 text-muted">Địa chỉ nhận hàng:</div>
-            <div class="col-sm-8 text-break" th:text="${order.address}">Địa chỉ người nhận</div>
+            <div class="col-sm-8 text-break" th:text="${order.shippingAddress}">Địa chỉ người nhận</div>
+
+            <th:block th:if="${order.note != null && !order.note.isEmpty()}">
+              <div class="col-sm-4 text-muted">Ghi chú:</div>
+              <div class="col-sm-8 text-secondary fst-italic" th:text="${order.note}">Ghi chú đơn hàng</div>
+            </th:block>
 
             <div class="col-sm-4 text-muted">Trạng thái:</div>
             <div class="col-sm-8">

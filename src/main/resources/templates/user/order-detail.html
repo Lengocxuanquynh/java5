@@ -56,8 +56,14 @@
         </div>
 
         <!-- Shipping info -->
-        <h6 class="fw-bold text-danger mb-2"><i class="bi bi-geo-alt-fill me-1"></i>Địa chỉ nhận hàng</h6>
-        <p class="text-dark small mb-4 p-3 border rounded bg-light" th:text="${order.address}">Địa chỉ</p>
+        <h6 class="fw-bold text-danger mb-2"><i class="bi bi-geo-alt-fill me-1"></i>Thông tin nhận hàng</h6>
+        <div class="text-dark small mb-4 p-3 border rounded bg-light">
+          <div><strong class="text-dark">Người nhận:</strong> <span th:text="${order.shippingName}">Tên người nhận</span> - <span th:text="${order.shippingPhone}">0987654321</span></div>
+          <div class="mt-1"><strong class="text-dark">Địa chỉ giao:</strong> <span th:text="${order.shippingAddress}">Địa chỉ nhận</span></div>
+          <div th:if="${order.note != null && !order.note.isEmpty()}" class="mt-1 text-secondary fst-italic">
+            <strong class="text-dark">Ghi chú:</strong> <span th:text="${order.note}">Ghi chú đơn hàng</span>
+          </div>
+        </div>
 
         <!-- Product items in order -->
         <h6 class="fw-bold text-dark mb-3"><i class="bi bi-box-seam-fill text-danger me-1"></i>Danh sách sản phẩm</h6>

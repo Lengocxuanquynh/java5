@@ -44,6 +44,7 @@ public class UserController {
 			profileBean.setName(currentUser.getName());
 			profileBean.setEmail(currentUser.getEmail());
 			profileBean.setPhone(currentUser.getPhone());
+			profileBean.setAddress(currentUser.getAddress()); // [Vinh] Đồng bộ địa chỉ phục vụ luồng Order
 			model.addAttribute("profileBean", profileBean);
 		}
 
@@ -90,9 +91,23 @@ public class UserController {
 			return "user/profile";
 		}
 
+		// [Vinh] Kiểm tra trùng SĐT với user khác - phục vụ luồng Order
+		User existingPhone = userServices.findByPhone(profileBean.getPhone());
+		if (existingPhone != null && existingPhone.getId() != currentUser.getId()) {
+			model.addAttribute("currentUser", currentUser);
+			ChangePasswordBean pwdBean = new ChangePasswordBean();
+			model.addAttribute("passwordBean", pwdBean);
+			model.addAttribute("changePasswordBean", pwdBean);
+			model.addAttribute("cartCount", cartDetailServices.getTotalQuantity());
+			model.addAttribute("phoneError", "Số điện thoại này đã được sử dụng bởi một tài khoản khác!");
+			model.addAttribute("activeTab", "profile");
+			return "user/profile";
+		}
+
 		currentUser.setName(profileBean.getName());
 		currentUser.setEmail(profileBean.getEmail());
 		currentUser.setPhone(profileBean.getPhone());
+		currentUser.setAddress(profileBean.getAddress()); // [Vinh] Lưu địa chỉ vào DB phục vụ luồng Order
 		userServices.save(currentUser);
 
 		// Cập nhật lại session
@@ -120,6 +135,7 @@ public class UserController {
 			profileBean.setName(currentUser.getName());
 			profileBean.setEmail(currentUser.getEmail());
 			profileBean.setPhone(currentUser.getPhone());
+			profileBean.setAddress(currentUser.getAddress()); // [Vinh]
 
 			model.addAttribute("currentUser", currentUser);
 			model.addAttribute("profileBean", profileBean);
@@ -136,6 +152,7 @@ public class UserController {
 			profileBean.setName(currentUser.getName());
 			profileBean.setEmail(currentUser.getEmail());
 			profileBean.setPhone(currentUser.getPhone());
+			profileBean.setAddress(currentUser.getAddress()); // [Vinh]
 
 			errors.rejectValue("currentPassword", "mismatch", "Mật khẩu hiện tại không chính xác!");
 			model.addAttribute("currentUser", currentUser);
@@ -154,6 +171,7 @@ public class UserController {
 			profileBean.setName(currentUser.getName());
 			profileBean.setEmail(currentUser.getEmail());
 			profileBean.setPhone(currentUser.getPhone());
+			profileBean.setAddress(currentUser.getAddress()); // [Vinh]
 
 			errors.rejectValue("confirmPassword", "mismatch", "Xác nhận mật khẩu mới không khớp!");
 			model.addAttribute("currentUser", currentUser);

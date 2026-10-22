@@ -47,6 +47,7 @@ public class DatabaseDataInitializer implements CommandLineRunner {
 			admin.setName("Quản Trị Viên Shopee");
 			admin.setEmail("admin@shopee.vn");
 			admin.setPhone("0987654321");
+			admin.setAddress("Trụ sở PolyShop, Tòa nhà FPT Polytechnic, Phố Trịnh Văn Bô, Nam Từ Liêm, Hà Nội");
 			admin.setRole(1); // 1: Admin
 			admin.setStatus(true);
 			userJPA.save(admin);
@@ -57,6 +58,7 @@ public class DatabaseDataInitializer implements CommandLineRunner {
 			user.setName("Nguyễn Văn A");
 			user.setEmail("nguyenvana@gmail.com");
 			user.setPhone("0912345678");
+			user.setAddress("Tòa FPT Polytechnic, Phố Trịnh Văn Bô, Nam Từ Liêm, Hà Nội");
 			user.setRole(0); // 0: User
 			user.setStatus(true);
 			userJPA.save(user);
@@ -67,6 +69,7 @@ public class DatabaseDataInitializer implements CommandLineRunner {
 			user2.setName("Trần Thị Bích");
 			user2.setEmail("bichthitran@gmail.com");
 			user2.setPhone("0988776655");
+			user2.setAddress("Số 123 Đường Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh");
 			user2.setRole(0); // 0: User
 			user2.setStatus(true);
 			userJPA.save(user2);
@@ -149,8 +152,10 @@ public class DatabaseDataInitializer implements CommandLineRunner {
 				// Đơn 1: user1 - Đã nhận hàng (status = 5: Đã nhận hàng / Hoàn thành)
 				Order o1 = new Order();
 				o1.setUser(user1);
-				o1.setAddress(
-						"Tòa FPT Polytechnic, Phố Trịnh Văn Bô, Nam Từ Liêm, Hà Nội (Người nhận: Nguyễn Văn A - SĐT: 0987654321)");
+				o1.setShippingName("Nguyễn Văn A");
+				o1.setShippingPhone("0912345678");
+				o1.setShippingAddress("Tòa FPT Polytechnic, Phố Trịnh Văn Bô, Nam Từ Liêm, Hà Nội");
+				o1.setNote("Giao giờ hành chính");
 				o1.setDate(Date.valueOf("2026-10-18"));
 				o1.setStatus(5); // 5: Đã nhận hàng / Hoàn thành
 				o1.setUpdatedAt(new java.sql.Timestamp(System.currentTimeMillis() - 86400000L));
@@ -163,11 +168,13 @@ public class DatabaseDataInitializer implements CommandLineRunner {
 				OrderDetail od1_2 = new OrderDetail(0, p2Price, 1, savedO1, prods.get(2));
 				orderDetailJPA.saveAll(Arrays.asList(od1_1, od1_2));
 
-				// Đơn 2: user1 - Đã giao hàng (status = 4: Đã giao hàng) -> Có nút "Đã Nhận
-				// Hàng"
+				// Đơn 2: user1 - Đã giao hàng (status = 4: Đã giao hàng) -> Có nút "Đã Nhận Hàng"
 				Order o2 = new Order();
 				o2.setUser(user1);
-				o2.setAddress("Số 45 Lê Duẩn, Quận 1, TP. Hồ Chí Minh (Người nhận: Nguyễn Văn A - SĐT: 0987654321)");
+				o2.setShippingName("Nguyễn Văn A");
+				o2.setShippingPhone("0912345678");
+				o2.setShippingAddress("Số 45 Lê Duẩn, Quận 1, TP. Hồ Chí Minh");
+				o2.setNote("Gọi trước khi giao 15 phút");
 				o2.setDate(Date.valueOf("2026-10-19"));
 				o2.setStatus(4); // 4: Đã giao hàng (chờ khách bấm xác nhận)
 				o2.setUpdatedAt(new java.sql.Timestamp(System.currentTimeMillis() - 3600000L));
@@ -183,8 +190,10 @@ public class DatabaseDataInitializer implements CommandLineRunner {
 				if (user2 != null) {
 					Order o3 = new Order();
 					o3.setUser(user2);
-					o3.setAddress(
-							"123 Đường Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh (Người nhận: Trần Thị Bích - SĐT: 0912345678)");
+					o3.setShippingName("Trần Thị Bích");
+					o3.setShippingPhone("0988776655");
+					o3.setShippingAddress("123 Đường Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh");
+					o3.setNote("Để ở quầy lễ tân");
 					o3.setDate(Date.valueOf("2026-10-20"));
 					o3.setStatus(1); // 1: Chờ xác nhận
 					o3.setUpdatedAt(new java.sql.Timestamp(System.currentTimeMillis()));

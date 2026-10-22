@@ -151,7 +151,18 @@
           </div>
           <div class="col-md-6">
             <h6 class="fw-bold text-muted small text-uppercase">Thông tin giao hàng</h6>
-            <div class="text-dark small" th:text="${order.address}">Địa chỉ</div>
+            <div class="text-dark small fw-semibold">
+              <i class="bi bi-person-fill text-secondary me-1"></i>
+              <span th:text="${order.shippingName}">Người nhận</span>
+              <span class="text-muted ms-2" th:text="'(' + ${order.shippingPhone} + ')'">(0987654321)</span>
+            </div>
+            <div class="text-dark small mt-1">
+              <i class="bi bi-geo-alt-fill text-danger me-1"></i>
+              <span th:text="${order.shippingAddress}">Địa chỉ</span>
+            </div>
+            <div th:if="${order.note != null && !order.note.isEmpty()}" class="text-secondary small mt-1 fst-italic">
+              <i class="bi bi-chat-left-dots text-primary me-1"></i>Ghi chú: <span th:text="${order.note}">Ghi chú</span>
+            </div>
             <div class="text-muted small mt-1" th:text="'Ngày đặt hàng: ' + ${order.date}">2026-09-26</div>
             <div th:if="${order.updatedAt != null}" class="text-muted small mt-1">
               <i class="bi bi-clock-history me-1 text-primary"></i>Cập nhật lần cuối:

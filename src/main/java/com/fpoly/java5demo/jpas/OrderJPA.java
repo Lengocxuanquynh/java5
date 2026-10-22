@@ -18,8 +18,12 @@ public interface OrderJPA extends JpaRepository<Order, Integer> {
 	@Query(value = "SELECT * FROM orders ORDER BY date DESC, id DESC", nativeQuery = true)
 	List<Order> findAllWithDetails();
 
+	// [Vinh] Lọc đơn hàng theo trạng thái
+	@Query(value = "SELECT * FROM orders WHERE status = ?1 ORDER BY date DESC, id DESC", nativeQuery = true)
 	List<Order> findByStatusOrderByDateDesc(int status);
 
+	// [Vinh] Lọc đơn hàng theo user và trạng thái
+	@Query(value = "SELECT * FROM orders WHERE user_id = ?1 AND status = ?2 ORDER BY date DESC, id DESC", nativeQuery = true)
 	List<Order> findByUserIdAndStatusOrderByDateDesc(int userId, int status);
 
 	@Query(value = "SELECT COUNT(*) FROM orders WHERE status = ?1", nativeQuery = true)

@@ -7,6 +7,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,9 +22,17 @@ import com.fpoly.java5demo.jpas.OrderDetailJPA;
 import com.fpoly.java5demo.jpas.OrderJPA;
 import com.fpoly.java5demo.jpas.ProductJPA;
 import com.fpoly.java5demo.jpas.UserJPA;
+import com.fpoly.java5demo.utils.Utils;
 
+import jakarta.servlet.http.HttpServletRequest;
+
+// [Vinh] Service xử lý luồng bán hàng - code theo chuẩn thầy (Java5-SD21201)
+// Dùng Cookie lấy userId, Optional kiểm tra, throw RuntimeException khi lỗi
 @Service
 public class OrderServices {
+
+	@Autowired
+	private HttpServletRequest request;
 
 	@Autowired
 	private OrderJPA orderJPA;
@@ -40,20 +49,41 @@ public class OrderServices {
 	@Autowired
 	private CartDetailServices cartDetailServices;
 
+	/**
+	 * [Vinh] Tạo đơn hàng - đặt toàn bộ hoặc chỉ các sản phẩm được chọn từ giỏ
+	 * hàng.
+	 * Lưu riêng 4 cột: shippingName, shippingPhone, shippingAddress, note
+	 * (theo chuẩn thầy - không ghép chuỗi vào 1 cột address).
+	 * Trừ tồn kho khi đặt hàng thành công. Xóa sản phẩm đã mua khỏi giỏ.
+	 * 
+	 * @return id đơn hàng vừa tạo
+	 */
 	@Transactional
-	public Order createOrder(User user, CheckoutBean checkoutBean) {
-		return createOrder(user, checkoutBean, null);
+	public int createOrder(CheckoutBean bean) {
+		return createOrder(bean, null);
 	}
 
 	@Transactional
-	public Order createOrder(User user, CheckoutBean checkoutBean, List<Integer> selectedProdIds) {
-		if (user == null || user.getRole() == 1) {
-			return null; // Tài khoản Admin không được phép đặt mua hàng
+	public int createOrder(CheckoutBean bean, List<Integer> selectedProdIds) {
+		// Lấy user id từ cookie (theo chuẩn thầy)
+		int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
+		Optional<User> userOptional = userJPA.findById(userId);
+
+		if (!userOptional.isPresent()) {
+			throw new RuntimeException("Không tìm thấy tài khoản người dùng!");
 		}
 
+		User user = userOptional.get();
+
+		// Tài khoản Admin không được phép đặt hàng
+		if (user.getRole() == 1) {
+			throw new RuntimeException("Tài khoản Admin không được phép đặt hàng!");
+		}
+
+		// Lấy giỏ hàng từ session
 		Map<Integer, Integer> allCartItems = cartDetailServices.getCartMapSession();
 		if (allCartItems.isEmpty()) {
-			return null;
+			throw new RuntimeException("Giỏ hàng trống!");
 		}
 
 		// Lọc ra các sản phẩm được tích chọn mua (nếu có chỉ định)
@@ -69,69 +99,73 @@ public class OrderServices {
 		}
 
 		if (cartItems.isEmpty()) {
-			return null;
+			throw new RuntimeException("Không có sản phẩm nào được chọn!");
 		}
 
+		// Lấy danh sách sản phẩm từ DB
 		List<Integer> ids = new ArrayList<>(cartItems.keySet());
 		List<Product> products = productJPA.findAllById(ids);
 
+		// Tính tổng tiền và kiểm tra tồn kho
 		int totalPrice = 0;
 		for (Product item : products) {
 			int buyQty = cartItems.getOrDefault(item.getId(), 0);
 			if (item.getQuantity() < buyQty || buyQty <= 0) {
-				return null; // Không đủ số lượng tồn kho
+				throw new RuntimeException(
+						"Sản phẩm '" + item.getName() + "' không đủ số lượng trong kho!");
 			}
 			totalPrice += buyQty * item.getSalePrice();
 		}
 
-		// Tạo đơn hàng
+		// Tạo đơn hàng - lưu riêng 4 cột thông tin giao hàng (theo chuẩn thầy)
 		Order order = new Order();
-		String fullAddress = checkoutBean.getAddress() + " (Người nhận: " + checkoutBean.getFullName() + " - SĐT: "
-				+ checkoutBean.getPhone() + ")";
-		if (checkoutBean.getNote() != null && !checkoutBean.getNote().trim().isEmpty()) {
-			fullAddress += " [Ghi chú: " + checkoutBean.getNote().trim() + "]";
-		}
-		if (fullAddress.length() > 200) {
-			fullAddress = fullAddress.substring(0, 200);
-		}
-		order.setAddress(fullAddress);
-
-		User managedUser = userJPA.findById(user.getId()).orElse(user);
-		order.setUser(managedUser);
+		order.setShippingName(bean.getFullName());
+		order.setShippingPhone(bean.getPhone());
+		order.setShippingAddress(bean.getAddress());
+		order.setNote(bean.getNote());
+		order.setTotalPrice(totalPrice);
+		order.setUser(user);
+		order.setStatus(1); // 1: Chờ xác nhận
 
 		Calendar calendar = Calendar.getInstance();
 		String dateStr = String.format("%04d-%02d-%02d", calendar.get(Calendar.YEAR),
 				calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
 		order.setDate(Date.valueOf(dateStr));
-		order.setStatus(1); // 1: Chờ xác nhận (chuẩn quy ước của thầy)
 		order.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
-		order.setTotalPrice(totalPrice);
 
 		Order savedOrder = orderJPA.save(order);
 
 		// Lưu chi tiết đơn hàng và trừ kho
-		List<OrderDetail> details = new ArrayList<>();
 		for (Product item : products) {
 			int buyQty = cartItems.get(item.getId());
+
 			OrderDetail detail = new OrderDetail();
 			detail.setOrder(savedOrder);
 			detail.setProduct(item);
 			detail.setPrice(item.getSalePrice());
 			detail.setQuantity(buyQty);
 			orderDetailJPA.save(detail);
-			details.add(detail);
 
 			// Trừ số lượng tồn kho
 			item.setQuantity(item.getQuantity() - buyQty);
 			productJPA.save(item);
 		}
-		savedOrder.setOrderDetails(details);
 
-		// Chỉ xóa các sản phẩm đã mua khỏi giỏ hàng; các sản phẩm chưa chọn vẫn giữ
-		// nguyên
-		cartDetailServices.removeItemsFromCart(user.getId(), ids);
+		// Chỉ xóa các sản phẩm đã mua khỏi giỏ hàng
+		cartDetailServices.removeItemsFromCart(userId, ids);
 
-		return savedOrder;
+		return savedOrder.getId();
+	}
+
+	/**
+	 * [Vinh] Lấy đơn hàng theo ID - kiểm tra quyền sở hữu theo userId từ Cookie
+	 */
+	public Order getOrderById(int orderId) {
+		Optional<Order> orderOptional = orderJPA.findById(orderId);
+		if (!orderOptional.isPresent()) {
+			return null;
+		}
+		return orderOptional.get();
 	}
 
 	public List<Order> getOrdersByUser(int userId) {
@@ -140,10 +174,6 @@ public class OrderServices {
 
 	public List<Order> getAllOrders() {
 		return orderJPA.findAllByOrderByDateDesc();
-	}
-
-	public Order getOrderById(int orderId) {
-		return orderJPA.findById(orderId).orElse(null);
 	}
 
 	public List<OrderDetail> getOrderDetails(int orderId) {
@@ -173,21 +203,22 @@ public class OrderServices {
 	}
 
 	/**
-	 * Cập nhật trạng thái đơn hàng (Admin):
+	 * [Vinh] Cập nhật trạng thái đơn hàng (Admin):
 	 * - Trạng thái đơn luôn kiểm tra ở DB
-	 * - Khi thay đổi nhớ cập nhật giá trị của updated at
+	 * - Khi thay đổi nhớ cập nhật giá trị của updated_at
 	 * - Trạng thái đơn hàng chỉ được cập nhật theo 1 chiều duy nhất:
-	 * + 1 -> 2 -> 3 -> 4 (Đã giao hàng)
-	 * + 1 -> 6 (Huỷ đơn)
-	 * + 2 -> 6 (Huỷ đơn)
+	 *   + 1 -> 2 -> 3 -> 4 (Đã giao hàng)
+	 *   + 1 -> 6 (Huỷ đơn)
+	 *   + 2 -> 6 (Huỷ đơn)
 	 */
 	@Transactional
 	public boolean updateStatus(int orderId, int newStatus) {
-		Order order = getOrderById(orderId);
-		if (order == null) {
+		Optional<Order> orderOptional = orderJPA.findById(orderId);
+		if (!orderOptional.isPresent()) {
 			return false;
 		}
 
+		Order order = orderOptional.get();
 		int currentStatus = order.getStatus();
 
 		// Kiểm tra quy tắc chuyển 1 chiều duy nhất
@@ -216,19 +247,20 @@ public class OrderServices {
 	}
 
 	/**
-	 * Chức năng huỷ đơn hàng (Admin):
-	 * - Kiểm tra trạng thái đơn "Chờ xác nhận" == 1 hoặc "Đã xác nhận" == 2 thì mới
-	 * được huỷ (sang 6)
+	 * [Vinh] Chức năng huỷ đơn hàng (Admin):
+	 * - Kiểm tra trạng thái đơn "Chờ xác nhận" == 1 hoặc "Đã xác nhận" == 2
+	 *   thì mới được huỷ (sang 6)
 	 * - Trạng thái đơn luôn kiểm tra ở DB
-	 * - Khi thay đổi nhớ cập nhật giá trị của updated at
+	 * - Khi thay đổi nhớ cập nhật giá trị của updated_at
 	 */
 	@Transactional
 	public boolean adminCancelOrder(int orderId) {
-		Order order = getOrderById(orderId);
-		if (order == null) {
+		Optional<Order> orderOptional = orderJPA.findById(orderId);
+		if (!orderOptional.isPresent()) {
 			return false;
 		}
 
+		Order order = orderOptional.get();
 		int currentStatus = order.getStatus();
 		if (currentStatus == 1 || currentStatus == 2) {
 			order.setStatus(6); // 6: Huỷ đơn
@@ -241,16 +273,21 @@ public class OrderServices {
 	}
 
 	/**
-	 * Chức năng huỷ đơn hàng (User):
+	 * [Vinh] Chức năng huỷ đơn hàng (User):
 	 * - Kiểm tra đơn hàng có phải của user sở hữu không?
 	 * - Kiểm tra trạng thái đơn "Chờ xác nhận" == 1 => Thì mới được huỷ (sang 6)
 	 * - Trạng thái đơn luôn kiểm tra ở DB
-	 * - Khi thay đổi nhớ cập nhật giá trị của updated at
+	 * - Khi thay đổi nhớ cập nhật giá trị của updated_at
 	 */
 	@Transactional
 	public boolean cancelOrder(int orderId, int userId) {
-		Order order = getOrderById(orderId);
-		if (order == null || order.getUser() == null || order.getUser().getId() != userId) {
+		Optional<Order> orderOptional = orderJPA.findById(orderId);
+		if (!orderOptional.isPresent()) {
+			return false;
+		}
+
+		Order order = orderOptional.get();
+		if (order.getUser() == null || order.getUser().getId() != userId) {
 			return false;
 		}
 
@@ -266,16 +303,21 @@ public class OrderServices {
 	}
 
 	/**
-	 * Chức năng xác nhận đơn hàng (User):
+	 * [Vinh] Chức năng xác nhận nhận hàng (User):
 	 * - Trạng thái đơn luôn kiểm tra ở DB
-	 * - Khi thay đổi nhớ cập nhật giá trị của updated at
-	 * - Chỉ được xác nhận khi trạng thái đơn trước đó là 4 ("Đã giao hàng") =>
-	 * chuyển sang 5 ("Đã nhận hàng / Hoàn thành")
+	 * - Khi thay đổi nhớ cập nhật giá trị của updated_at
+	 * - Chỉ được xác nhận khi trạng thái đơn trước đó là 4 ("Đã giao hàng")
+	 *   => chuyển sang 5 ("Đã nhận hàng / Hoàn thành")
 	 */
 	@Transactional
 	public boolean confirmReceived(int orderId, int userId) {
-		Order order = getOrderById(orderId);
-		if (order == null || order.getUser() == null || order.getUser().getId() != userId) {
+		Optional<Order> orderOptional = orderJPA.findById(orderId);
+		if (!orderOptional.isPresent()) {
+			return false;
+		}
+
+		Order order = orderOptional.get();
+		if (order.getUser() == null || order.getUser().getId() != userId) {
 			return false;
 		}
 
@@ -289,6 +331,9 @@ public class OrderServices {
 		return false;
 	}
 
+	/**
+	 * [Vinh] Hoàn lại tồn kho khi hủy đơn
+	 */
 	private void restoreStock(int orderId) {
 		List<OrderDetail> details = orderDetailJPA.findByOrderId(orderId);
 		for (OrderDetail detail : details) {

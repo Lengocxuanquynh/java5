@@ -37,8 +37,17 @@ public class Order {
 	@Column(name = "id")
 	private int id;
 
-	@Column(name = "address", length = 200, nullable = false, columnDefinition = "NVARCHAR(200)")
-	private String address;
+	@Column(name = "shipping_name", nullable = false, columnDefinition = "NVARCHAR(100)")
+	private String shippingName;
+
+	@Column(name = "shipping_phone", nullable = false, length = 20)
+	private String shippingPhone;
+
+	@Column(name = "shipping_address", nullable = false, columnDefinition = "NVARCHAR(255)")
+	private String shippingAddress;
+
+	@Column(name = "note", columnDefinition = "NVARCHAR(500)")
+	private String note;
 
 	@Column(name = "total_price", nullable = false)
 	private int totalPrice;
