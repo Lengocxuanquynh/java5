@@ -16,7 +16,6 @@ import com.fpoly.java5demo.entities.User;
 import com.fpoly.java5demo.services.UserServices;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
 @Controller
@@ -78,9 +77,9 @@ public class AdminUserController {
 	}
 
 	@GetMapping("/user/delete/{id}")
-	public String userDelete(@PathVariable("id") int id, HttpServletRequest request, HttpSession session,
+	public String userDelete(@PathVariable("id") int id, HttpServletRequest request,
 			RedirectAttributes redirectAttributes) {
-		User currentAdmin = userServices.getLoggedInUser(request, session);
+		User currentAdmin = userServices.getLoggedInUser(request);
 		if (currentAdmin != null && currentAdmin.getId() == id) {
 			redirectAttributes.addFlashAttribute("errorMessage", "Bạn không thể tự xóa tài khoản của chính mình!");
 			return "redirect:/admin?tab=users";
@@ -107,9 +106,9 @@ public class AdminUserController {
 	}
 
 	@GetMapping("/user/toggle-status/{id}")
-	public String userToggleStatus(@PathVariable("id") int id, HttpServletRequest request, HttpSession session,
+	public String userToggleStatus(@PathVariable("id") int id, HttpServletRequest request,
 			RedirectAttributes redirectAttributes) {
-		User currentAdmin = userServices.getLoggedInUser(request, session);
+		User currentAdmin = userServices.getLoggedInUser(request);
 		if (currentAdmin != null && currentAdmin.getId() == id) {
 			redirectAttributes.addFlashAttribute("errorMessage", "Bạn không thể tự khóa tài khoản của chính mình!");
 			return "redirect:/admin?tab=users";

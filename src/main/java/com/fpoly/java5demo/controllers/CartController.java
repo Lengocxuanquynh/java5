@@ -15,8 +15,9 @@ import com.fpoly.java5demo.services.CartDetailServices;
 import com.fpoly.java5demo.services.UserServices;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 
+// [CartController] Quản lý giỏ hàng chuẩn phong cách thầy (Java5-SD21201)
+// Bắt buộc đăng nhập khi xem giỏ hàng hoặc thêm sản phẩm, dùng Cookie & Database, không dùng Session
 @Controller
 @RequestMapping("/cart")
 public class CartController {
@@ -29,15 +30,20 @@ public class CartController {
 
 	@GetMapping("")
 	public String viewCart(@RequestParam(name = "error", required = false) String error,
-			Model model, HttpServletRequest request, HttpSession session) {
-		User currentUser = userServices.getLoggedInUser(request, session);
-		if ("admin_cannot_buy".equals(error)) {
+			Model model, HttpServletRequest request) {
+		User currentUser = userServices.getLoggedInUser(request);
+		if (currentUser == null) {
+			return "redirect:/login?redirect=/cart";
+		}
+
+		if ("admin_cannot_buy".equals(error) || currentUser.getRole() == 1) {
 			model.addAttribute("errorMessage", "Tài khoản Quản Trị Viên (Admin) không được phép mua hàng!");
 		}
+
 		model.addAttribute("currentUser", currentUser);
-		model.addAttribute("cartItems", cartDetailServices.getCartItems());
-		model.addAttribute("totalAmount", cartDetailServices.getTotalAmount());
-		model.addAttribute("cartCount", cartDetailServices.getTotalQuantity());
+		model.addAttribute("cartItems", cartDetailServices.getCartItems(currentUser.getId()));
+		model.addAttribute("totalAmount", cartDetailServices.getTotalAmount(currentUser.getId()));
+		model.addAttribute("cartCount", cartDetailServices.getTotalQuantity(currentUser.getId()));
 		return "cart";
 	}
 
@@ -45,15 +51,19 @@ public class CartController {
 	public String addToCart(@RequestParam("productId") int productId,
 			@RequestParam(name = "quantity", defaultValue = "1") int quantity,
 			@RequestParam(name = "buyNow", defaultValue = "false") boolean buyNow,
-			HttpServletRequest request, HttpSession session,
+			HttpServletRequest request,
 			RedirectAttributes redirectAttributes) {
-		User currentUser = userServices.getLoggedInUser(request, session);
-		if (currentUser != null && currentUser.getRole() == 1) {
+		User currentUser = userServices.getLoggedInUser(request);
+		if (currentUser == null) {
+			return "redirect:/login?redirect=/product/" + productId;
+		}
+
+		if (currentUser.getRole() == 1) {
 			redirectAttributes.addFlashAttribute("errorMessage", "Tài khoản Quản Trị Viên (Admin) không được phép mua hàng!");
 			return "redirect:/product/" + productId;
 		}
 
-		cartDetailServices.addToCart(productId, quantity);
+		cartDetailServices.addToCart(currentUser.getId(), productId, quantity);
 		if (buyNow) {
 			return "redirect:/checkout?items=" + productId;
 		}
@@ -62,34 +72,49 @@ public class CartController {
 
 	@GetMapping("/add/{id}")
 	public String addToCartQuick(@PathVariable("id") int productId,
-			HttpServletRequest request, HttpSession session,
+			HttpServletRequest request,
 			RedirectAttributes redirectAttributes) {
-		User currentUser = userServices.getLoggedInUser(request, session);
-		if (currentUser != null && currentUser.getRole() == 1) {
+		User currentUser = userServices.getLoggedInUser(request);
+		if (currentUser == null) {
+			return "redirect:/login?redirect=/cart";
+		}
+
+		if (currentUser.getRole() == 1) {
 			redirectAttributes.addFlashAttribute("errorMessage", "Tài khoản Quản Trị Viên (Admin) không được phép mua hàng!");
 			return "redirect:/product/" + productId;
 		}
 
-		cartDetailServices.addToCart(productId, 1);
+		cartDetailServices.addToCart(currentUser.getId(), productId, 1);
 		return "redirect:/cart";
 	}
 
 	@PostMapping("/update")
 	public String updateQuantity(@RequestParam("productId") int productId,
-			@RequestParam("quantity") int quantity) {
-		cartDetailServices.updateQuantity(productId, quantity);
+			@RequestParam("quantity") int quantity,
+			HttpServletRequest request) {
+		User currentUser = userServices.getLoggedInUser(request);
+		if (currentUser != null) {
+			cartDetailServices.updateQuantity(currentUser.getId(), productId, quantity);
+		}
 		return "redirect:/cart";
 	}
 
 	@GetMapping("/remove/{id}")
-	public String removeFromCart(@PathVariable("id") int productId) {
-		cartDetailServices.removeCart(productId);
+	public String removeFromCart(@PathVariable("id") int productId,
+			HttpServletRequest request) {
+		User currentUser = userServices.getLoggedInUser(request);
+		if (currentUser != null) {
+			cartDetailServices.removeCart(currentUser.getId(), productId);
+		}
 		return "redirect:/cart";
 	}
 
 	@GetMapping("/clear")
-	public String clearCart() {
-		cartDetailServices.clearCart();
+	public String clearCart(HttpServletRequest request) {
+		User currentUser = userServices.getLoggedInUser(request);
+		if (currentUser != null) {
+			cartDetailServices.clearCart(currentUser.getId());
+		}
 		return "redirect:/cart";
 	}
 }

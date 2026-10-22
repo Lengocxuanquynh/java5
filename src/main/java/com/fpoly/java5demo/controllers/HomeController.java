@@ -19,7 +19,6 @@ import com.fpoly.java5demo.services.ProductServices;
 import com.fpoly.java5demo.services.UserServices;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class HomeController {
@@ -42,8 +41,8 @@ public class HomeController {
 	}
 
 	@ModelAttribute("currentUser")
-	public User getCurrentUser(HttpServletRequest request, HttpSession session) {
-		return userServices.getLoggedInUser(request, session);
+	public User getCurrentUser(HttpServletRequest request) {
+		return userServices.getLoggedInUser(request);
 	}
 
 	@ModelAttribute("cartCount")

@@ -68,7 +68,7 @@ public class OrderServices {
 		if (user == null || user.getRole() == 1) {
 			return null;
 		}
-		Map<Integer, Integer> allCartItems = cartDetailServices.getCartMapSession();
+		Map<Integer, Integer> allCartItems = cartDetailServices.getCartMap(user.getId());
 		if (allCartItems.isEmpty()) {
 			return null;
 		}
@@ -132,8 +132,8 @@ public class OrderServices {
 			throw new RuntimeException("Tài khoản Admin không được phép đặt hàng!");
 		}
 
-		// Lấy giỏ hàng từ session
-		Map<Integer, Integer> allCartItems = cartDetailServices.getCartMapSession();
+		// Lấy giỏ hàng từ database theo user_id
+		Map<Integer, Integer> allCartItems = cartDetailServices.getCartMap(user.getId());
 		if (allCartItems.isEmpty()) {
 			throw new RuntimeException("Giỏ hàng trống!");
 		}

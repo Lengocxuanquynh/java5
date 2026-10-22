@@ -15,12 +15,18 @@ public interface CartDetailJPA extends JpaRepository<CartDetail, Integer> {
 	@Query(value = "SELECT * FROM cart_details WHERE user_id=?1", nativeQuery = true)
 	List<CartDetail> findByUserId(int id);
 
+	@Query(value = "SELECT * FROM cart_details WHERE user_id=?1 AND prod_id=?2", nativeQuery = true)
 	Optional<CartDetail> findByUserIdAndProductId(int userId, int productId);
 
 	@Modifying
 	@Transactional
 	@Query(value = "DELETE FROM cart_details WHERE user_id=?1", nativeQuery = true)
 	void deleteByUserId(int id);
+
+	@Modifying
+	@Transactional
+	@Query(value = "DELETE FROM cart_details WHERE user_id=?1 AND prod_id=?2", nativeQuery = true)
+	void deleteByUserIdAndProductId(int userId, int productId);
 
 	@Modifying
 	@Transactional

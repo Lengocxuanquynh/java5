@@ -17,7 +17,6 @@ import com.fpoly.java5demo.services.CartDetailServices;
 import com.fpoly.java5demo.services.UserServices;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
 @Controller
@@ -31,8 +30,8 @@ public class UserController {
 	private CartDetailServices cartDetailServices;
 
 	@GetMapping("/profile")
-	public String profile(Model model, HttpServletRequest request, HttpSession session) {
-		User currentUser = userServices.getLoggedInUser(request, session);
+	public String profile(Model model, HttpServletRequest request) {
+		User currentUser = userServices.getLoggedInUser(request);
 		if (currentUser == null) {
 			return "redirect:/login?redirect=/user/profile";
 		}
@@ -61,9 +60,9 @@ public class UserController {
 
 	@PostMapping({ "/profile", "/profile/update" })
 	public String updateProfile(@Valid @ModelAttribute("profileBean") ProfileBean profileBean,
-			Errors errors, Model model, HttpServletRequest request, HttpSession session,
+			Errors errors, Model model, HttpServletRequest request,
 			RedirectAttributes redirectAttributes) {
-		User currentUser = userServices.getLoggedInUser(request, session);
+		User currentUser = userServices.getLoggedInUser(request);
 		if (currentUser == null) {
 			return "redirect:/login?redirect=/user/profile";
 		}
@@ -117,9 +116,9 @@ public class UserController {
 
 	@PostMapping({ "/change-password", "/profile/change-password" })
 	public String changePassword(@Valid @ModelAttribute("passwordBean") ChangePasswordBean bean,
-			Errors errors, Model model, HttpServletRequest request, HttpSession session,
+			Errors errors, Model model, HttpServletRequest request,
 			RedirectAttributes redirectAttributes) {
-		User currentUser = userServices.getLoggedInUser(request, session);
+		User currentUser = userServices.getLoggedInUser(request);
 		if (currentUser == null) {
 			return "redirect:/login?redirect=/user/profile";
 		}

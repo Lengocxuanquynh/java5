@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,11 +15,12 @@ import com.fpoly.java5demo.entities.Product;
 import com.fpoly.java5demo.entities.User;
 import com.fpoly.java5demo.jpas.CartDetailJPA;
 import com.fpoly.java5demo.jpas.UserJPA;
+import com.fpoly.java5demo.utils.Utils;
 
-import jakarta.servlet.http.HttpSession;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 
+// [CartDetailServices] Quản lý giỏ hàng trực tiếp từ Database theo user_id (Cookie)
+// Loại bỏ hoàn toàn HttpSession - Code mộc mạc chuẩn style thầy (Java5-SD21201)
 @Service
 public class CartDetailServices {
 
@@ -29,18 +31,25 @@ public class CartDetailServices {
 	private UserJPA userJPA;
 
 	@Autowired
-	private HttpSession session;
-
-	@Autowired
-	private ObjectMapper objectMapper;
-
-	@Autowired
 	private ProductServices productServices;
 
 	@Autowired(required = false)
-	private jakarta.servlet.http.HttpServletRequest request;
+	private HttpServletRequest request;
 
 	public CartDetailServices() {
+	}
+
+	private int getLoggedInUserId() {
+		try {
+			if (request != null) {
+				String uidStr = Utils.getCookieValue(Utils.COOKIE_KEY_USER_ID, request);
+				if (uidStr != null && !uidStr.trim().isEmpty()) {
+					return Integer.parseInt(uidStr.trim());
+				}
+			}
+		} catch (Exception ignored) {
+		}
+		return 0;
 	}
 
 	public List<CartDetail> getCartsByUserId(int id) {
@@ -53,245 +62,220 @@ public class CartDetailServices {
 		return cartDetails;
 	}
 
-	public boolean syncSessionCartToDatabase(List<CartDetail> cartDetails) {
-		try {
-			if (cartDetails != null && !cartDetails.isEmpty() && cartDetails.get(0).getUser() != null) {
-				cartDetailJPA.deleteByUserId(cartDetails.get(0).getUser().getId());
-				cartDetailJPA.saveAll(cartDetails);
-				return true;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+	public boolean addToCart(int userId, int prodId, int count) {
+		if (userId <= 0 || count <= 0) {
+			return false;
 		}
-		return false;
-	}
-
-	public void loadCartFromDatabaseToSession(int userId) {
-		try {
-			List<CartDetail> cartDetails = getCartsByUserId(userId);
-			if (cartDetails != null && !cartDetails.isEmpty()) {
-				Map<Integer, Integer> cartMap = new HashMap<>();
-				for (CartDetail cartDetail : cartDetails) {
-					if (cartDetail.getProduct() != null && cartDetail.getProduct().isStatus()) {
-						cartMap.put(cartDetail.getProduct().getId(), cartDetail.getQuantity());
-					}
-				}
-				saveCartToSession(cartMap);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public boolean addToCart(int prodId, int count) {
-		Map<Integer, Integer> cartMap = this.getCartMapSession();
 		Product product = productServices.findById(prodId);
 		if (product == null || !product.isStatus()) {
 			return false;
 		}
 
-		int currentQty = cartMap.getOrDefault(prodId, 0);
-		int newQty = currentQty + count;
-
-		if (product.getQuantity() < newQty) {
-			newQty = product.getQuantity();
-		}
-
-		if (newQty <= 0) {
-			cartMap.remove(prodId);
+		Optional<CartDetail> opt = cartDetailJPA.findByUserIdAndProductId(userId, prodId);
+		if (opt.isPresent()) {
+			CartDetail cd = opt.get();
+			int newQty = cd.getQuantity() + count;
+			if (newQty > product.getQuantity()) {
+				newQty = product.getQuantity();
+			}
+			if (newQty <= 0) {
+				cartDetailJPA.delete(cd);
+			} else {
+				cd.setQuantity(newQty);
+				cartDetailJPA.save(cd);
+			}
 		} else {
-			cartMap.put(prodId, newQty);
+			int qty = count;
+			if (qty > product.getQuantity()) {
+				qty = product.getQuantity();
+			}
+			if (qty > 0) {
+				Optional<User> userOpt = userJPA.findById(userId);
+				if (userOpt.isPresent()) {
+					CartDetail cd = new CartDetail();
+					cd.setUser(userOpt.get());
+					cd.setProduct(product);
+					cd.setQuantity(qty);
+					cartDetailJPA.save(cd);
+				}
+			}
 		}
-
-		saveCartToSession(cartMap);
 		return true;
 	}
 
-	public boolean updateQuantity(int prodId, int quantity) {
-		Map<Integer, Integer> cartMap = this.getCartMapSession();
+	public boolean addToCart(int prodId, int count) {
+		int userId = getLoggedInUserId();
+		if (userId <= 0) {
+			return false;
+		}
+		return addToCart(userId, prodId, count);
+	}
+
+	public boolean updateQuantity(int userId, int prodId, int quantity) {
+		if (userId <= 0) {
+			return false;
+		}
 		Product product = productServices.findById(prodId);
 		if (product == null) {
 			return false;
 		}
 
-		if (quantity <= 0) {
-			cartMap.remove(prodId);
-		} else {
-			if (quantity > product.getQuantity()) {
-				quantity = product.getQuantity();
+		Optional<CartDetail> opt = cartDetailJPA.findByUserIdAndProductId(userId, prodId);
+		if (opt.isPresent()) {
+			CartDetail cd = opt.get();
+			if (quantity <= 0) {
+				cartDetailJPA.delete(cd);
+			} else {
+				if (quantity > product.getQuantity()) {
+					quantity = product.getQuantity();
+				}
+				cd.setQuantity(quantity);
+				cartDetailJPA.save(cd);
 			}
-			cartMap.put(prodId, quantity);
-		}
-
-		saveCartToSession(cartMap);
-		return true;
-	}
-
-	public boolean removeCart(int prodId) {
-		Map<Integer, Integer> cartMap = this.getCartMapSession();
-		if (cartMap.containsKey(prodId)) {
-			cartMap.remove(prodId);
-			saveCartToSession(cartMap);
 			return true;
 		}
 		return false;
 	}
 
-	public void clearCart() {
-		try {
-			session.setAttribute("cart", "{}");
-			session.setAttribute("cartCount", 0);
-			Object uidAttr = session.getAttribute("userId");
-			if (uidAttr == null) {
-				Object userAttr = session.getAttribute("user");
-				if (userAttr instanceof User u) {
-					uidAttr = u.getId();
-				}
-			}
-			if (uidAttr == null && request != null) {
-				String cookieUid = com.fpoly.java5demo.utils.Utils.getCookieValue(com.fpoly.java5demo.utils.Utils.COOKIE_KEY_USER_ID, request);
-				if (cookieUid != null && !cookieUid.trim().isEmpty()) {
-					uidAttr = cookieUid.trim();
-				}
-			}
-			if (uidAttr != null) {
-				int userId = Integer.parseInt(String.valueOf(uidAttr));
-				cartDetailJPA.deleteByUserId(userId);
-			}
-		} catch (Exception ignored) {
+	public boolean updateQuantity(int prodId, int quantity) {
+		int userId = getLoggedInUserId();
+		if (userId <= 0) {
+			return false;
 		}
+		return updateQuantity(userId, prodId, quantity);
+	}
+
+	public boolean removeCart(int userId, int prodId) {
+		if (userId <= 0) {
+			return false;
+		}
+		cartDetailJPA.deleteByUserIdAndProductId(userId, prodId);
+		return true;
+	}
+
+	public boolean removeCart(int prodId) {
+		int userId = getLoggedInUserId();
+		if (userId <= 0) {
+			return false;
+		}
+		return removeCart(userId, prodId);
 	}
 
 	public void clearCart(int userId) {
-		clearCart();
-		try {
+		if (userId > 0) {
 			cartDetailJPA.deleteByUserId(userId);
-		} catch (Exception e) {
-			System.err.println("Lỗi xóa giỏ hàng database của user " + userId + ": " + e.getMessage());
+		}
+	}
+
+	public void clearCart() {
+		int userId = getLoggedInUserId();
+		if (userId > 0) {
+			clearCart(userId);
 		}
 	}
 
 	public void removeItemsFromCart(int userId, List<Integer> prodIds) {
+		if (userId <= 0) {
+			return;
+		}
 		if (prodIds == null || prodIds.isEmpty()) {
 			clearCart(userId);
 			return;
 		}
-
-		Map<Integer, Integer> cartMap = getCartMapSession();
-		for (Integer id : prodIds) {
-			cartMap.remove(id);
-		}
-		saveCartToSession(cartMap);
-
-		try {
-			cartDetailJPA.deleteByUserIdAndProductIds(userId, prodIds);
-		} catch (Exception e) {
-			System.err.println("Lỗi xóa sản phẩm đã mua khỏi giỏ hàng database: " + e.getMessage());
-		}
+		cartDetailJPA.deleteByUserIdAndProductIds(userId, prodIds);
 	}
 
-	public List<CartItemBean> getCartItems() {
-		return getCartItems(null);
-	}
-
-	public List<CartItemBean> getCartItems(List<Integer> prodIds) {
+	public List<CartItemBean> getCartItems(int userId, List<Integer> prodIds) {
 		List<CartItemBean> items = new ArrayList<>();
-		Map<Integer, Integer> cartMap = getCartMapSession();
-
-		for (Map.Entry<Integer, Integer> entry : cartMap.entrySet()) {
-			if (prodIds != null && !prodIds.isEmpty() && !prodIds.contains(entry.getKey())) {
+		if (userId <= 0) {
+			return items;
+		}
+		List<CartDetail> details = cartDetailJPA.findByUserId(userId);
+		for (CartDetail cd : details) {
+			if (prodIds != null && !prodIds.isEmpty() && !prodIds.contains(cd.getProduct().getId())) {
 				continue;
 			}
-			Product product = productServices.findById(entry.getKey());
+			Product product = cd.getProduct();
 			if (product != null && product.isStatus()) {
-				items.add(new CartItemBean(product, entry.getValue()));
+				items.add(new CartItemBean(product, cd.getQuantity()));
 			}
 		}
-
 		return items;
 	}
 
-	public int getTotalAmount() {
+	public List<CartItemBean> getCartItems() {
+		int userId = getLoggedInUserId();
+		return getCartItems(userId, null);
+	}
+
+	public List<CartItemBean> getCartItems(List<Integer> prodIds) {
+		int userId = getLoggedInUserId();
+		return getCartItems(userId, prodIds);
+	}
+
+	public List<CartItemBean> getCartItems(int userId) {
+		return getCartItems(userId, null);
+	}
+
+	public int getTotalAmount(int userId) {
 		int total = 0;
-		for (CartItemBean item : getCartItems()) {
+		for (CartItemBean item : getCartItems(userId, null)) {
 			total += item.getSubTotal();
 		}
 		return total;
 	}
 
-	public int getTotalQuantity() {
+	public int getTotalAmount() {
+		int userId = getLoggedInUserId();
+		return getTotalAmount(userId);
+	}
+
+	public int getTotalQuantity(int userId) {
+		if (userId <= 0) {
+			return 0;
+		}
 		int count = 0;
-		for (Integer qty : getCartMapSession().values()) {
-			count += qty;
+		List<CartDetail> details = cartDetailJPA.findByUserId(userId);
+		for (CartDetail cd : details) {
+			count += cd.getQuantity();
 		}
 		return count;
 	}
 
-	public Map<Integer, Integer> getCartMapSession() {
+	public int getTotalQuantity() {
+		int userId = getLoggedInUserId();
+		return getTotalQuantity(userId);
+	}
+
+	public Map<Integer, Integer> getCartMap(int userId) {
 		Map<Integer, Integer> cartMap = new HashMap<>();
-		String cartJson = (String) session.getAttribute("cart");
-		if (cartJson != null && !cartJson.isEmpty()) {
-			try {
-				cartMap = objectMapper.readValue(cartJson, new TypeReference<Map<Integer, Integer>>() {
-				});
-			} catch (Exception e) {
-				System.err.println("Lỗi parse JSON giỏ hàng: " + e.getMessage());
+		if (userId <= 0) {
+			return cartMap;
+		}
+		List<CartDetail> details = cartDetailJPA.findByUserId(userId);
+		for (CartDetail cd : details) {
+			if (cd.getProduct() != null && cd.getProduct().isStatus()) {
+				cartMap.put(cd.getProduct().getId(), cd.getQuantity());
 			}
 		}
 		return cartMap;
 	}
 
-	private void saveCartToSession(Map<Integer, Integer> cartMap) {
-		try {
-			String newCartJson = objectMapper.writeValueAsString(cartMap);
-			session.setAttribute("cart", newCartJson);
-			session.setAttribute("cartCount", getTotalQuantity());
-			syncCurrentSessionToDatabase(cartMap);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	public Map<Integer, Integer> getCartMap() {
+		int userId = getLoggedInUserId();
+		return getCartMap(userId);
 	}
 
-	private void syncCurrentSessionToDatabase(Map<Integer, Integer> cartMap) {
-		try {
-			Object uidAttr = session.getAttribute("userId");
-			if (uidAttr == null) {
-				Object userAttr = session.getAttribute("user");
-				if (userAttr instanceof User u) {
-					uidAttr = u.getId();
-				}
-			}
-			if (uidAttr == null && request != null) {
-				String cookieUid = com.fpoly.java5demo.utils.Utils.getCookieValue(com.fpoly.java5demo.utils.Utils.COOKIE_KEY_USER_ID, request);
-				if (cookieUid != null && !cookieUid.trim().isEmpty()) {
-					uidAttr = cookieUid.trim();
-				}
-			}
-			if (uidAttr != null) {
-				int userId = Integer.parseInt(String.valueOf(uidAttr));
-				User user = userJPA.findById(userId).orElse(null);
-				if (user != null) {
-					cartDetailJPA.deleteByUserId(userId);
-					if (cartMap != null && !cartMap.isEmpty()) {
-						List<CartDetail> list = new ArrayList<>();
-						for (Map.Entry<Integer, Integer> entry : cartMap.entrySet()) {
-							Product p = productServices.findById(entry.getKey());
-							if (p != null) {
-								CartDetail cd = new CartDetail();
-								cd.setUser(user);
-								cd.setProduct(p);
-								cd.setQuantity(entry.getValue());
-								list.add(cd);
-							}
-						}
-						if (!list.isEmpty()) {
-							cartDetailJPA.saveAll(list);
-						}
-					}
-				}
-			}
-		} catch (Exception e) {
-			System.err.println("Lỗi đồng bộ giỏ hàng vào SQL Server: " + e.getMessage());
-		}
+	// Tương thích ngược cho các class gọi method cũ
+	public Map<Integer, Integer> getCartMapSession() {
+		return getCartMap();
+	}
+
+	public boolean syncSessionCartToDatabase(List<CartDetail> cartDetails) {
+		return true;
+	}
+
+	public void loadCartFromDatabaseToSession(int userId) {
+		// No-op: Cart được load trực tiếp từ DB
 	}
 }

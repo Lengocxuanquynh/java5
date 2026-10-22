@@ -26,9 +26,6 @@ public class AuthController {
 	@Autowired
 	private UserServices userServices;
 
-	@Autowired
-	private com.fpoly.java5demo.services.CartDetailServices cartDetailServices;
-
 	@GetMapping("/login")
 	public String loginForm(Model model, @RequestParam(name = "redirect", required = false) String redirect) {
 		model.addAttribute("loginBean", new LoginBean());
@@ -52,8 +49,6 @@ public class AuthController {
 			model.addAttribute("redirect", redirect);
 			return "login";
 		}
-
-		cartDetailServices.loadCartFromDatabaseToSession(user.getId());
 
 		if (redirect != null && !redirect.trim().isEmpty() && redirect.startsWith("/")
 				&& !redirect.startsWith("//") && !redirect.contains("/login")) {

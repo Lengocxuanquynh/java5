@@ -54,8 +54,8 @@ public class AuthInterceptor implements HandlerInterceptor {
 				}
 			}
 
-			// 4. Phía USER: Tài khoản Admin không được phép mua hàng (checkout)
-			if (uri.startsWith("/checkout") && user.getRole() == 1) {
+			// 4. Phía USER: Tài khoản Admin không được phép mua hàng (checkout, thêm vào giỏ)
+			if ((uri.startsWith("/checkout") || uri.startsWith("/cart/add")) && user.getRole() == 1) {
 				response.sendRedirect("/cart?error=admin_cannot_buy");
 				return false;
 			}
@@ -69,7 +69,24 @@ public class AuthInterceptor implements HandlerInterceptor {
 			if (uri.startsWith("/admin")) {
 				response.sendRedirect("/login");
 			} else {
-				response.sendRedirect("/login?redirect=" + uri);
+				String redirectUri = uri;
+				if (uri.startsWith("/cart/add")) {
+					String referer = request.getHeader("Referer");
+					if (referer != null && referer.contains("/")) {
+						try {
+							java.net.URI ref = new java.net.URI(referer);
+							redirectUri = ref.getPath();
+							if (ref.getQuery() != null) {
+								redirectUri += "?" + ref.getQuery();
+							}
+						} catch (Exception ignored) {
+							redirectUri = "/cart";
+						}
+					} else {
+						redirectUri = "/cart";
+					}
+				}
+				response.sendRedirect("/login?redirect=" + redirectUri);
 			}
 			return false;
 		}
