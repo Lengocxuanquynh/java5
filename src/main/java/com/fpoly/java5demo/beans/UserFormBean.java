@@ -32,6 +32,8 @@ public class UserFormBean {
 	@Pattern(regexp = "^(0|\\+84)[3|5|7|8|9][0-9]{8}$", message = "Số điện thoại không hợp lệ (VD: 0987654321)")
 	private String phone;
 
+	private String address; // Địa chỉ mặc định (không bắt buộc)
+
 	private int role = 0; // 0: Khách hàng, 1: Quản trị viên
 	private boolean active = true;
 }

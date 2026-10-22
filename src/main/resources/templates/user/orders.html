@@ -103,7 +103,7 @@
           <!-- Order Footer -->
           <div class="d-flex flex-wrap justify-content-between align-items-center pt-2">
             <div class="small text-muted text-truncate" style="max-width: 500px;">
-              <i class="bi bi-geo-alt me-1 text-danger"></i>Giao đến: <span th:text="${ord.address}">Địa chỉ</span>
+              <i class="bi bi-geo-alt me-1 text-danger"></i>Giao đến: <strong class="text-dark" th:text="${ord.shippingName} + ' (' + ${ord.shippingPhone} + ')'">Tên</strong> - <span th:text="${ord.shippingAddress}">Địa chỉ</span>
               <span th:if="${ord.updatedAt != null}" class="d-block mt-1" style="font-size: 11px;">
                 <i class="bi bi-clock-history me-1"></i>Cập nhật: <span
                   th:text="${#dates.format(ord.updatedAt, 'dd/MM/yyyy HH:mm:ss')}">2026-10-20 18:00</span>

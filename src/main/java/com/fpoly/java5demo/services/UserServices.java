@@ -29,6 +29,11 @@ public class UserServices {
 		if (userJPA.existsByEmail(bean.getEmail())) {
 			return "Email đã được sử dụng!";
 		}
+		// [Vinh] Kiểm tra trùng số điện thoại - phục vụ luồng Order
+		if (bean.getPhone() != null && !bean.getPhone().trim().isEmpty()
+				&& userJPA.existsByPhone(bean.getPhone().trim())) {
+			return "Số điện thoại đã được sử dụng!";
+		}
 
 		User user = new User();
 		user.setUsername(bean.getUsername());
@@ -138,6 +143,11 @@ public class UserServices {
 
 	public User findByEmail(String email) {
 		return userJPA.findByEmail(email).orElse(null);
+	}
+
+	// [Vinh] Tìm user theo SĐT - phục vụ kiểm tra trùng khi cập nhật profile / admin quản lý user
+	public User findByPhone(String phone) {
+		return userJPA.findByPhone(phone).orElse(null);
 	}
 
 	public User save(User user) {

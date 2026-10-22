@@ -36,8 +36,11 @@ public class User {
 	@Column(name = "email", nullable = false, length = 100)
 	private String email;
 
-	@Column(name = "phone", length = 20)
+	@Column(name = "phone", length = 20, unique = true)
 	private String phone;
+
+	@Column(name = "address", columnDefinition = "NVARCHAR(255)")
+	private String address;
 
 	@Column(name = "status", nullable = false)
 	private boolean status = true;

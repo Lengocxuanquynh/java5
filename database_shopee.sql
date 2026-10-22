@@ -30,9 +30,10 @@ CREATE TABLE users (
     password VARCHAR(100) NOT NULL,
     name NVARCHAR(200) NOT NULL,
     email VARCHAR(100) NOT NULL,
-    phone VARCHAR(20),
+    phone VARCHAR(20) UNIQUE,             -- Không cho trùng số điện thoại
+    address NVARCHAR(255),                -- Địa chỉ mặc định của người dùng
     status BIT NOT NULL DEFAULT 1,
-    role INT NOT NULL DEFAULT 0 -- 0: User / Khách hàng, 1: Admin / Quản trị viên
+    role INT NOT NULL DEFAULT 0           -- 0: User / Khách hàng, 1: Admin / Quản trị viên
 );
 GO
 
@@ -81,10 +82,13 @@ GO
 -- 8. TẠO BẢNG ORDERS (ĐƠN HÀNG)
 CREATE TABLE orders (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    address NVARCHAR(200) NOT NULL,
+    shipping_name NVARCHAR(100) NOT NULL,  -- Tên người nhận hàng
+    shipping_phone VARCHAR(20) NOT NULL,   -- SĐT người nhận hàng
+    shipping_address NVARCHAR(255) NOT NULL,-- Địa chỉ giao hàng
+    note NVARCHAR(500),                    -- Ghi chú cho shipper
     total_price INT NOT NULL DEFAULT 0,
     date DATE NOT NULL,
-    status INT NOT NULL DEFAULT 1, -- 1: Chờ xác nhận, 2: Đã xác nhận, 3: Đang giao, 4: Đã giao, 5: Đã nhận, 6: Hủy
+    status INT NOT NULL DEFAULT 1,         -- 1: Chờ xác nhận, 2: Đã xác nhận, 3: Đang giao, 4: Đã giao, 5: Đã nhận, 6: Hủy
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     user_id INT NOT NULL,
     CONSTRAINT FK_Orders_Users FOREIGN KEY (user_id) REFERENCES users(id)
@@ -108,10 +112,10 @@ GO
 -- ==========================================================
 
 -- A. Users
-INSERT INTO users (username, password, name, email, phone, status, role) VALUES 
-('admin', '123456', N'Quản Trị Viên Shopee', 'admin@shopee.vn', '0987654321', 1, 1),
-('user1', '123456', N'Nguyễn Văn A', 'nguyenvana@gmail.com', '0912345678', 1, 0),
-('user2', '123456', N'Trần Thị Bích', 'bichthitran@gmail.com', '0988776655', 1, 0);
+INSERT INTO users (username, password, name, email, phone, address, status, role) VALUES 
+('admin', '123456', N'Quản Trị Viên Shopee', 'admin@shopee.vn', '0987654321', NULL, 1, 1),
+('user1', '123456', N'Nguyễn Văn A', 'nguyenvana@gmail.com', '0912345678', N'Tòa FPT Polytechnic, Phố Trịnh Văn Bô, Nam Từ Liêm, Hà Nội', 1, 0),
+('user2', '123456', N'Trần Thị Bích', 'bichthitran@gmail.com', '0988776655', N'123 Đường Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh', 1, 0);
 GO
 
 -- B. Categories
@@ -134,9 +138,9 @@ INSERT INTO products (name, price, quantity, status, cat_id) VALUES
 GO
 
 -- D. Đơn hàng mẫu
-INSERT INTO orders (address, total_price, date, status, user_id) VALUES 
-(N'Tòa FPT Polytechnic, Phố Trịnh Văn Bô, Nam Từ Liêm, Hà Nội (Người nhận: Nguyễn Văn A - SĐT: 0987654321)', 530000, '2026-09-25', 1, 2),
-(N'123 Đường Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh (Người nhận: Trần Thị Bích - SĐT: 0912345678)', 350000, '2026-09-26', 0, 3);
+INSERT INTO orders (shipping_name, shipping_phone, shipping_address, note, total_price, date, status, user_id) VALUES 
+(N'Nguyễn Văn A', '0912345678', N'Tòa FPT Polytechnic, Phố Trịnh Văn Bô, Nam Từ Liêm, Hà Nội', N'Giao giờ hành chính', 530000, '2026-09-25', 1, 2),
+(N'Trần Thị Bích', '0988776655', N'123 Đường Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh', NULL, 350000, '2026-09-26', 1, 3);
 GO
 
 -- E. Chi tiết đơn hàng mẫu

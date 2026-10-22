@@ -89,10 +89,22 @@
                     </div>
                   </div>
 
-                  <div class="row mb-4 align-items-center">
-                    <label for="phone" class="col-md-3 col-form-label fw-semibold text-dark">Số điện thoại</label>
+                  <div class="row mb-3 align-items-center">
+                    <label for="phone" class="col-md-3 col-form-label fw-semibold text-dark">Số điện thoại *</label>
                     <div class="col-md-9">
-                      <input type="text" class="form-control" id="phone" th:field="*{phone}">
+                      <input type="text" class="form-control" id="phone" th:field="*{phone}"
+                             th:classappend="${#fields.hasErrors('phone') || phoneError != null} ? 'is-invalid' : ''">
+                      <small class="text-danger" th:errors="*{phone}"></small>
+                      <small class="text-danger" th:if="${phoneError != null}" th:text="${phoneError}"></small>
+                    </div>
+                  </div>
+
+                  <!-- [Vinh] Bổ sung địa chỉ mặc định phục vụ luồng Order (đồng bộ dữ liệu người dùng) -->
+                  <div class="row mb-4 align-items-center">
+                    <label for="address" class="col-md-3 col-form-label fw-semibold text-dark">Địa chỉ nhận hàng</label>
+                    <div class="col-md-9">
+                      <textarea class="form-control" id="address" th:field="*{address}" rows="2"
+                                placeholder="Nhập địa chỉ nhận hàng mặc định (số nhà, đường, phường/xã, quận/huyện, tỉnh/thành)..."></textarea>
                     </div>
                   </div>
 

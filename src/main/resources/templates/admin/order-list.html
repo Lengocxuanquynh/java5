@@ -129,7 +129,7 @@
                   <div class="text-muted small" th:text="${o.user.email}">email</div>
                 </td>
                 <td th:text="${o.date}">2026-09-26</td>
-                <td class="text-truncate" style="max-width: 250px;" th:text="${o.address}">Địa chỉ</td>
+                <td class="text-truncate" style="max-width: 250px;" th:text="${o.shippingAddress}">Địa chỉ</td>
                 <td class="fw-bold text-danger"
                   th:text="${#numbers.formatDecimal(o.totalPrice, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</td>
                 <td>
