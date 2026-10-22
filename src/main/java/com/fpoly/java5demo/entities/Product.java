@@ -57,15 +57,4 @@ public class Product {
 	public int getSalePrice() {
 		return price;
 	}
-
-	public Product(int id, String name, int price, int quantity, boolean status, Category category, List<Image> images, List<CartDetail> cartDetails) {
-		this.id = id;
-		this.name = name;
-		this.price = price;
-		this.quantity = quantity;
-		this.status = status;
-		this.category = category;
-		this.images = images;
-		this.cartDetails = cartDetails;
-	}
 }
