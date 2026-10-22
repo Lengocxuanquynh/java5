@@ -183,7 +183,6 @@ public class UserController {
 
 		currentUser.setPassword(bean.getNewPassword());
 		userServices.save(currentUser);
-		session.setAttribute("user", currentUser);
 
 		redirectAttributes.addFlashAttribute("successPasswordMessage", "Đổi mật khẩu thành công!");
 		redirectAttributes.addFlashAttribute("successMessage", "Đổi mật khẩu thành công!");
