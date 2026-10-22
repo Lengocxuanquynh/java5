@@ -24,7 +24,6 @@ import com.fpoly.java5demo.services.OrderServices;
 import com.fpoly.java5demo.utils.Utils;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
 // [Vinh] Controller xử lý luồng bán hàng - code theo chuẩn thầy (Java5-SD21201)
@@ -50,7 +49,7 @@ public class OrderController {
 	 */
 	@GetMapping("/checkout")
 	public String checkoutPage(@RequestParam(name = "items", required = false) List<Integer> items,
-			Model model, HttpSession session) {
+			Model model) {
 		// Lấy user id từ cookie (theo chuẩn thầy)
 		try {
 			int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
@@ -65,19 +64,12 @@ public class OrderController {
 				return "redirect:/cart?error=admin_cannot_buy";
 			}
 
-			// Lấy danh sách sản phẩm trong giỏ
+			// Lấy danh sách sản phẩm trong giỏ (nếu có items được chọn thì lọc, không thì lấy hết)
 			List<CartItemBean> cartItems;
 			if (items != null && !items.isEmpty()) {
 				cartItems = cartDetailServices.getCartItems(items);
-				session.setAttribute("selectedCheckoutItemIds", items);
 			} else {
-				@SuppressWarnings("unchecked")
-				List<Integer> sessionItems = (List<Integer>) session.getAttribute("selectedCheckoutItemIds");
-				if (sessionItems != null && !sessionItems.isEmpty()) {
-					cartItems = cartDetailServices.getCartItems(sessionItems);
-				} else {
-					cartItems = cartDetailServices.getCartItems();
-				}
+				cartItems = cartDetailServices.getCartItems();
 			}
 
 			if (cartItems.isEmpty()) {
@@ -91,9 +83,6 @@ public class OrderController {
 				totalQuantity += item.getQuantity();
 			}
 
-			// Lưu tổng tiền vào session để kiểm tra khi submit (chống thay đổi giá)
-			session.setAttribute("checkoutExpectedTotal", totalAmount);
-
 			// Tự động điền thông tin từ tài khoản user (theo chuẩn thầy)
 			CheckoutBean bean = new CheckoutBean();
 			bean.setFullName(currentUser.getName());
@@ -105,6 +94,7 @@ public class OrderController {
 			model.addAttribute("cartItems", cartItems);
 			model.addAttribute("totalAmount", totalAmount);
 			model.addAttribute("cartCount", totalQuantity);
+			model.addAttribute("selectedItems", items);
 
 			return "checkout";
 		} catch (Exception e) {
@@ -119,7 +109,8 @@ public class OrderController {
 	 */
 	@PostMapping("/checkout")
 	public String placeOrder(@Valid @ModelAttribute("checkoutBean") CheckoutBean bean, Errors errors,
-			Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+			@RequestParam(name = "items", required = false) List<Integer> items,
+			Model model, RedirectAttributes redirectAttributes) {
 		try {
 			int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
 			User currentUser = userJPA.findById(userId).orElse(null);
@@ -132,10 +123,8 @@ public class OrderController {
 				return "redirect:/cart?error=admin_cannot_buy";
 			}
 
-			@SuppressWarnings("unchecked")
-			List<Integer> selectedItems = (List<Integer>) session.getAttribute("selectedCheckoutItemIds");
-			List<CartItemBean> cartItems = (selectedItems != null && !selectedItems.isEmpty())
-					? cartDetailServices.getCartItems(selectedItems)
+			List<CartItemBean> cartItems = (items != null && !items.isEmpty())
+					? cartDetailServices.getCartItems(items)
 					: cartDetailServices.getCartItems();
 
 			if (cartItems.isEmpty()) {
@@ -149,27 +138,17 @@ public class OrderController {
 				totalQuantity += item.getQuantity();
 			}
 
-			// So sánh tổng tiền vừa tính lại từ DB với tổng tiền lúc hiển thị (chống đổi giá)
-			Integer expectedTotal = (Integer) session.getAttribute("checkoutExpectedTotal");
-			if (expectedTotal == null || !expectedTotal.equals(totalAmount)) {
-				session.removeAttribute("checkoutExpectedTotal");
-				redirectAttributes.addFlashAttribute("errorMessage", "Đơn hàng không thể hoàn tất");
-				return "redirect:/cart";
-			}
-
 			if (errors.hasErrors()) {
 				model.addAttribute("currentUser", currentUser);
 				model.addAttribute("cartItems", cartItems);
 				model.addAttribute("totalAmount", totalAmount);
 				model.addAttribute("cartCount", totalQuantity);
+				model.addAttribute("selectedItems", items);
 				return "checkout";
 			}
 
 			// Tạo đơn hàng (theo chuẩn thầy - try-catch)
-			int orderId = orderServices.createOrder(bean, selectedItems);
-
-			session.removeAttribute("selectedCheckoutItemIds");
-			session.removeAttribute("checkoutExpectedTotal");
+			int orderId = orderServices.createOrder(bean, items);
 
 			return "redirect:/order/success/" + orderId;
 		} catch (Exception e) {

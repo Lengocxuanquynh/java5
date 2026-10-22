@@ -14,7 +14,6 @@ import com.fpoly.java5demo.utils.Utils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 
 @Service
 public class UserServices {
@@ -86,28 +85,10 @@ public class UserServices {
 		return null;
 	}
 
-	public User login(String username, String password, HttpServletResponse response, HttpSession session) {
-		return login(username, password, response);
-	}
-
-	public User login(String username, String password, HttpSession session) {
-		return login(username, password, (HttpServletResponse) null);
-	}
-
 	public void logout(HttpServletRequest request, HttpServletResponse response) {
 		if (response != null) {
 			Utils.clearCookie(request, response);
 		}
-	}
-
-	public void logout(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
-		if (session != null) {
-			try {
-				session.invalidate();
-			} catch (Exception ignored) {
-			}
-		}
-		logout(request, response);
 	}
 
 	public User getUserInfoById(int id) {
@@ -139,10 +120,6 @@ public class UserServices {
 			}
 		}
 		return null;
-	}
-
-	public User getLoggedInUser(HttpServletRequest request, HttpSession session) {
-		return getLoggedInUser(request);
 	}
 
 	/**

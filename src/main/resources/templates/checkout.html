@@ -25,6 +25,11 @@
 
       <form th:action="@{/checkout}" th:object="${checkoutBean}" method="post">
 
+        <!-- Danh sách items đã chọn thanh toán (truyền trực tiếp qua form, không dùng Session) -->
+        <th:block th:if="${selectedItems != null}">
+          <input type="hidden" name="items" th:each="itemId : ${selectedItems}" th:value="${itemId}">
+        </th:block>
+
         <!-- PolyShop Delivery Address Box with ribbon border effect -->
         <div class="bg-white rounded-3 p-4 shadow-sm mb-4 position-relative border-top border-4 border-danger">
           <h5 class="fw-bold text-danger mb-3 d-flex align-items-center gap-2">
