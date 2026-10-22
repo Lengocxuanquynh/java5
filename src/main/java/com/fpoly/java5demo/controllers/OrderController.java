@@ -18,16 +18,15 @@ import com.fpoly.java5demo.beans.CheckoutBean;
 import com.fpoly.java5demo.entities.Order;
 import com.fpoly.java5demo.entities.OrderDetail;
 import com.fpoly.java5demo.entities.User;
-import com.fpoly.java5demo.jpas.UserJPA;
 import com.fpoly.java5demo.services.CartDetailServices;
 import com.fpoly.java5demo.services.OrderServices;
-import com.fpoly.java5demo.utils.Utils;
+import com.fpoly.java5demo.services.UserServices;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 // [Vinh] Controller xử lý luồng bán hàng - code theo chuẩn thầy (Java5-SD21201)
-// Dùng Cookie lấy userId, try-catch bắt lỗi, redirect khi thất bại
+// Dùng Cookie + Interceptor lấy user, try-catch bắt lỗi, redirect khi thất bại
 @Controller
 public class OrderController {
 
@@ -41,7 +40,11 @@ public class OrderController {
 	private CartDetailServices cartDetailServices;
 
 	@Autowired
-	private UserJPA userJPA;
+	private UserServices userServices;
+
+	private User getCurrentUser() {
+		return userServices.getLoggedInUser(request);
+	}
 
 	/**
 	 * [Vinh] Trang checkout - điền thông tin đặt hàng
@@ -50,10 +53,8 @@ public class OrderController {
 	@GetMapping("/checkout")
 	public String checkoutPage(@RequestParam(name = "items", required = false) List<Integer> items,
 			Model model) {
-		// Lấy user id từ cookie (theo chuẩn thầy)
 		try {
-			int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
-			User currentUser = userJPA.findById(userId).orElse(null);
+			User currentUser = getCurrentUser();
 
 			if (currentUser == null) {
 				return "redirect:/login?redirect=/checkout";
@@ -112,8 +113,7 @@ public class OrderController {
 			@RequestParam(name = "items", required = false) List<Integer> items,
 			Model model, RedirectAttributes redirectAttributes) {
 		try {
-			int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
-			User currentUser = userJPA.findById(userId).orElse(null);
+			User currentUser = getCurrentUser();
 
 			if (currentUser == null) {
 				return "redirect:/login?redirect=/checkout";
@@ -161,8 +161,7 @@ public class OrderController {
 	@GetMapping("/order/success/{id}")
 	public String orderSuccess(@PathVariable("id") int id, Model model) {
 		try {
-			int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
-			User currentUser = userJPA.findById(userId).orElse(null);
+			User currentUser = getCurrentUser();
 
 			if (currentUser == null) {
 				return "redirect:/login";
@@ -188,8 +187,7 @@ public class OrderController {
 	@GetMapping("/user/orders")
 	public String myOrders(Model model) {
 		try {
-			int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
-			User currentUser = userJPA.findById(userId).orElse(null);
+			User currentUser = getCurrentUser();
 
 			if (currentUser == null) {
 				return "redirect:/login?redirect=/user/orders";
@@ -200,7 +198,7 @@ public class OrderController {
 				return "redirect:/admin/orders";
 			}
 
-			List<Order> orders = orderServices.getOrdersByUser(userId);
+			List<Order> orders = orderServices.getOrdersByUser(currentUser.getId());
 			model.addAttribute("orders", orders);
 			model.addAttribute("currentUser", currentUser);
 			model.addAttribute("cartCount", cartDetailServices.getTotalQuantity());
@@ -214,8 +212,7 @@ public class OrderController {
 	@GetMapping("/user/order/{id}")
 	public String myOrderDetail(@PathVariable("id") int id, Model model) {
 		try {
-			int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
-			User currentUser = userJPA.findById(userId).orElse(null);
+			User currentUser = getCurrentUser();
 
 			if (currentUser == null) {
 				return "redirect:/login?redirect=/user/orders";
@@ -240,9 +237,12 @@ public class OrderController {
 	@PostMapping("/user/order/cancel/{id}")
 	public String cancelMyOrder(@PathVariable("id") int id, RedirectAttributes redirectAttributes) {
 		try {
-			int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
+			User currentUser = getCurrentUser();
+			if (currentUser == null) {
+				return "redirect:/login?redirect=/user/orders";
+			}
 
-			boolean success = orderServices.cancelOrder(id, userId);
+			boolean success = orderServices.cancelOrder(id, currentUser.getId());
 			if (success) {
 				redirectAttributes.addFlashAttribute("successMessage", "Hủy đơn hàng #" + id + " thành công!");
 			} else {
@@ -259,9 +259,12 @@ public class OrderController {
 	@PostMapping("/user/order/received/{id}")
 	public String confirmReceivedOrder(@PathVariable("id") int id, RedirectAttributes redirectAttributes) {
 		try {
-			int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
+			User currentUser = getCurrentUser();
+			if (currentUser == null) {
+				return "redirect:/login?redirect=/user/orders";
+			}
 
-			boolean success = orderServices.confirmReceived(id, userId);
+			boolean success = orderServices.confirmReceived(id, currentUser.getId());
 			if (success) {
 				redirectAttributes.addFlashAttribute("successMessage",
 						"Đã xác nhận nhận hàng cho đơn #" + id + " thành công!");
