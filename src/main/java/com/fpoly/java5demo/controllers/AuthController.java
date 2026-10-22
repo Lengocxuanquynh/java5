@@ -39,13 +39,14 @@ public class AuthController {
 	@PostMapping("/login")
 	public String login(@Valid @ModelAttribute("loginBean") LoginBean bean, Errors errors,
 			@RequestParam(name = "redirect", required = false) String redirect,
-			HttpServletResponse response, HttpSession session, Model model) {
+			HttpServletResponse response, Model model) {
 		if (errors.hasErrors()) {
 			model.addAttribute("redirect", redirect);
 			return "login";
 		}
 
-		User user = userServices.login(bean.getUsername(), bean.getPassword(), response, session);
+		// Đăng nhập Cookie thuần túy theo chuẩn thầy (không lưu Session)
+		User user = userServices.login(bean.getUsername(), bean.getPassword(), response);
 		if (user == null) {
 			model.addAttribute("errorMessage", "Tên đăng nhập hoặc mật khẩu không chính xác, hoặc tài khoản đã bị khóa!");
 			model.addAttribute("redirect", redirect);
@@ -113,8 +114,8 @@ public class AuthController {
 	}
 
 	@GetMapping("/logout")
-	public String logout(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
-		userServices.logout(request, response, session);
+	public String logout(HttpServletRequest request, HttpServletResponse response) {
+		userServices.logout(request, response);
 		return "redirect:/";
 	}
 }

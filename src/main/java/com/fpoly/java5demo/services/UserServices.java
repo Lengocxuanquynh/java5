@@ -68,32 +68,36 @@ public class UserServices {
 		return null;
 	}
 
-	public User login(String username, String password, HttpServletResponse response, HttpSession session) {
-		User user = login(username, password, session);
-		if (user != null && response != null) {
-			Utils.setCookie(Utils.COOKIE_KEY_USER_ID, String.valueOf(user.getId()), response);
-			Utils.setCookie(Utils.COOKIE_KEY_ROLE, String.valueOf(user.getRole()), response);
-			Utils.setCookie("username", user.getUsername(), response);
-		}
-		return user;
-	}
-
-	public User login(String username, String password, HttpSession session) {
+	public User login(String username, String password, HttpServletResponse response) {
 		Optional<User> optionalUser = userJPA.findByUsernameAndPassword(username, password);
 		if (optionalUser.isPresent()) {
 			User user = optionalUser.get();
 			if (!user.isStatus()) {
 				return null; // Tài khoản bị khóa
 			}
-
-			// Lưu vào session
-			session.setAttribute("user", user);
-			session.setAttribute("userId", user.getId());
-			session.setAttribute("role", user.getRole());
-
+			// Lưu Cookie thuần túy theo chuẩn thầy (không lưu vào Session)
+			if (response != null) {
+				Utils.setCookie(Utils.COOKIE_KEY_USER_ID, String.valueOf(user.getId()), response);
+				Utils.setCookie(Utils.COOKIE_KEY_ROLE, String.valueOf(user.getRole()), response);
+				Utils.setCookie("username", user.getUsername(), response);
+			}
 			return user;
 		}
 		return null;
+	}
+
+	public User login(String username, String password, HttpServletResponse response, HttpSession session) {
+		return login(username, password, response);
+	}
+
+	public User login(String username, String password, HttpSession session) {
+		return login(username, password, (HttpServletResponse) null);
+	}
+
+	public void logout(HttpServletRequest request, HttpServletResponse response) {
+		if (response != null) {
+			Utils.clearCookie(request, response);
+		}
 	}
 
 	public void logout(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
@@ -103,38 +107,59 @@ public class UserServices {
 			} catch (Exception ignored) {
 			}
 		}
-		if (response != null) {
-			Utils.clearCookie(request, response);
-		}
+		logout(request, response);
 	}
 
 	public User getUserInfoById(int id) {
 		return userJPA.findById(id).orElse(null);
 	}
 
-	public User getLoggedInUser(HttpServletRequest request, HttpSession session) {
-		if (session != null && session.getAttribute("user") != null) {
-			return (User) session.getAttribute("user");
+	/**
+	 * [Cookie Auth] Lấy user đang đăng nhập dựa hoàn toàn vào Cookie và kiểm tra trực tiếp DB
+	 */
+	public User getLoggedInUser(HttpServletRequest request) {
+		if (request == null) {
+			return null;
 		}
-		if (request != null) {
-			String userIdStr = Utils.getCookieValue(Utils.COOKIE_KEY_USER_ID, request);
-			if (userIdStr != null && !userIdStr.trim().isEmpty()) {
-				try {
-					int userId = Integer.parseInt(userIdStr.trim());
-					User user = userJPA.findById(userId).orElse(null);
-					if (user != null && user.isStatus()) {
-						if (session != null) {
-							session.setAttribute("user", user);
-							session.setAttribute("userId", user.getId());
-							session.setAttribute("role", user.getRole());
-						}
-						return user;
-					}
-				} catch (Exception ignored) {
+		// 1. Ưu tiên lấy từ request attribute do AuthInterceptor đã nạp sẵn
+		Object cached = request.getAttribute("currentUser");
+		if (cached instanceof User) {
+			return (User) cached;
+		}
+		// 2. Đọc Cookie user_id và truy vấn DB
+		String userIdStr = Utils.getCookieValue(Utils.COOKIE_KEY_USER_ID, request);
+		if (userIdStr != null && !userIdStr.trim().isEmpty()) {
+			try {
+				int userId = Integer.parseInt(userIdStr.trim());
+				User user = userJPA.findById(userId).orElse(null);
+				if (user != null && user.isStatus()) {
+					return user;
 				}
+			} catch (Exception ignored) {
 			}
 		}
 		return null;
+	}
+
+	public User getLoggedInUser(HttpServletRequest request, HttpSession session) {
+		return getLoggedInUser(request);
+	}
+
+	/**
+	 * [checkAuth] Hàm kiểm tra đăng nhập & quyền dùng chung cho cả 2 bên (User & Admin)
+	 * @param request HttpServletRequest
+	 * @param requiredRole null: chỉ cần đăng nhập, 0: bắt buộc User, 1: bắt buộc Admin
+	 * @return User nếu hợp lệ, null nếu không hợp lệ / chưa đăng nhập
+	 */
+	public User checkAuth(HttpServletRequest request, Integer requiredRole) {
+		User user = getLoggedInUser(request);
+		if (user == null) {
+			return null;
+		}
+		if (requiredRole != null && user.getRole() != requiredRole) {
+			return null;
+		}
+		return user;
 	}
 
 	public List<User> getAllUsers() {

@@ -110,8 +110,6 @@ public class UserController {
 		currentUser.setAddress(profileBean.getAddress()); // [Vinh] Lưu địa chỉ vào DB phục vụ luồng Order
 		userServices.save(currentUser);
 
-		// Cập nhật lại session
-		session.setAttribute("user", currentUser);
 		redirectAttributes.addFlashAttribute("successProfileMessage", "Cập nhật hồ sơ tài khoản thành công!");
 		redirectAttributes.addFlashAttribute("successMessage", "Cập nhật hồ sơ tài khoản thành công!");
 		return "redirect:/user/profile";

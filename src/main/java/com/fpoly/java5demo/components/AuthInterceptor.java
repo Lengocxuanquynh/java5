@@ -1,55 +1,79 @@
 package com.fpoly.java5demo.components;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.fpoly.java5demo.entities.User;
-import com.fpoly.java5demo.services.UserServices;
+import com.fpoly.java5demo.jpas.UserJPA;
+import com.fpoly.java5demo.utils.Utils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 
+// [AuthInterceptor] Chặn và kiểm tra quyền tập trung cho CẢ 2 BÊN (User & Admin)
+// Chuẩn bài giảng thầy (Java5-SD21201): Dùng Cookie + truy vấn trực tiếp DB, không dùng Session
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
 
 	@Autowired
-	private UserServices userServices;
+	private UserJPA userJPA;
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
-		HttpSession session = request.getSession();
-		User user = userServices.getLoggedInUser(request, session);
 		String uri = request.getRequestURI();
 
-		// Nếu truy cập trang admin
-		if (uri.startsWith("/admin")) {
-			if (user == null) {
-				response.sendRedirect("/login?redirect=" + uri);
-				return false;
+		try {
+			// 1. Lấy userId từ Cookie (không phụ thuộc Session)
+			String userIdStr = Utils.getCookieValue(Utils.COOKIE_KEY_USER_ID, request);
+			if (userIdStr == null || userIdStr.trim().isEmpty()) {
+				throw new RuntimeException("Chưa đăng nhập - không tìm thấy cookie user_id");
 			}
-			if (user.getRole() != 1) { // 1: Admin
-				response.sendRedirect("/?error=forbidden");
-				return false;
-			}
-		}
 
-		// Nếu truy cập các trang yêu cầu đăng nhập: user profile, order history, checkout, cart
-		if (uri.startsWith("/user") || uri.startsWith("/checkout") || uri.startsWith("/cart")) {
-			if (user == null) {
-				response.sendRedirect("/login?redirect=" + uri);
+			int userId = Integer.parseInt(userIdStr.trim());
+
+			// 2. Kiểm tra trực tiếp vào Database xem user có tồn tại và đang hoạt động không
+			Optional<User> userOptional = userJPA.findById(userId);
+			if (!userOptional.isPresent()) {
+				throw new RuntimeException("Tài khoản không tồn tại trong DB");
+			}
+
+			User user = userOptional.get();
+			if (!user.isStatus()) {
+				throw new RuntimeException("Tài khoản đã bị khóa");
+			}
+
+			// 3. Phía ADMIN: Nếu truy cập các URL quản trị (/admin/**)
+			if (uri.startsWith("/admin")) {
+				if (user.getRole() != 1) { // 1: Admin
+					response.sendRedirect("/login");
+					return false;
+				}
+			}
+
+			// 4. Phía USER: Tài khoản Admin không được phép mua hàng (checkout)
+			if (uri.startsWith("/checkout") && user.getRole() == 1) {
+				response.sendRedirect("/cart?error=admin_cannot_buy");
 				return false;
 			}
-		}
 
-		// Tài khoản Quản trị viên (Admin) không được phép thực hiện mua hàng (checkout)
-		if (uri.startsWith("/checkout") && user != null && user.getRole() == 1) {
-			response.sendRedirect("/cart?error=admin_cannot_buy");
+			// 5. Lưu thông tin user vào request attribute để các Controller và View dùng trực tiếp
+			request.setAttribute("currentUser", user);
+
+		} catch (Exception e) {
+			// Bất kỳ lỗi nào (chưa có cookie, cookie giả mạo, ID không có trong DB, tài khoản bị khóa)
+			// => Ngắt ngay lập tức TRƯỚC KHI Controller và Service kịp chạy
+			if (uri.startsWith("/admin")) {
+				response.sendRedirect("/login");
+			} else {
+				response.sendRedirect("/login?redirect=" + uri);
+			}
 			return false;
 		}
 
-		return true;
+		return true; // Hợp lệ -> Cho phép đi tiếp vào Controller
 	}
 }

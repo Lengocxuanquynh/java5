@@ -37,6 +37,9 @@ public class CartDetailServices {
 	@Autowired
 	private ProductServices productServices;
 
+	@Autowired(required = false)
+	private jakarta.servlet.http.HttpServletRequest request;
+
 	public CartDetailServices() {
 	}
 
@@ -145,6 +148,12 @@ public class CartDetailServices {
 					uidAttr = u.getId();
 				}
 			}
+			if (uidAttr == null && request != null) {
+				String cookieUid = com.fpoly.java5demo.utils.Utils.getCookieValue(com.fpoly.java5demo.utils.Utils.COOKIE_KEY_USER_ID, request);
+				if (cookieUid != null && !cookieUid.trim().isEmpty()) {
+					uidAttr = cookieUid.trim();
+				}
+			}
 			if (uidAttr != null) {
 				int userId = Integer.parseInt(String.valueOf(uidAttr));
 				cartDetailJPA.deleteByUserId(userId);
@@ -250,6 +259,12 @@ public class CartDetailServices {
 				Object userAttr = session.getAttribute("user");
 				if (userAttr instanceof User u) {
 					uidAttr = u.getId();
+				}
+			}
+			if (uidAttr == null && request != null) {
+				String cookieUid = com.fpoly.java5demo.utils.Utils.getCookieValue(com.fpoly.java5demo.utils.Utils.COOKIE_KEY_USER_ID, request);
+				if (cookieUid != null && !cookieUid.trim().isEmpty()) {
+					uidAttr = cookieUid.trim();
 				}
 			}
 			if (uidAttr != null) {

@@ -64,6 +64,58 @@ public class OrderServices {
 	}
 
 	@Transactional
+	public Order createOrder(User user, CheckoutBean bean) {
+		if (user == null || user.getRole() == 1) {
+			return null;
+		}
+		Map<Integer, Integer> allCartItems = cartDetailServices.getCartMapSession();
+		if (allCartItems.isEmpty()) {
+			return null;
+		}
+		List<Integer> ids = new ArrayList<>(allCartItems.keySet());
+		List<Product> products = productJPA.findAllById(ids);
+		int totalPrice = 0;
+		for (Product item : products) {
+			int buyQty = allCartItems.getOrDefault(item.getId(), 0);
+			if (item.getQuantity() < buyQty || buyQty <= 0) {
+				return null;
+			}
+			totalPrice += buyQty * item.getSalePrice();
+		}
+		Order order = new Order();
+		order.setShippingName(bean.getFullName());
+		order.setShippingPhone(bean.getPhone());
+		order.setShippingAddress(bean.getAddress());
+		order.setNote(bean.getNote());
+		order.setTotalPrice(totalPrice);
+		order.setUser(user);
+		order.setStatus(1);
+		Calendar calendar = Calendar.getInstance();
+		String dateStr = String.format("%04d-%02d-%02d", calendar.get(Calendar.YEAR),
+				calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
+		order.setDate(Date.valueOf(dateStr));
+		order.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+		Order savedOrder = orderJPA.save(order);
+
+		List<OrderDetail> detailList = new ArrayList<>();
+		for (Product item : products) {
+			int buyQty = allCartItems.get(item.getId());
+			OrderDetail detail = new OrderDetail();
+			detail.setOrder(savedOrder);
+			detail.setProduct(item);
+			detail.setPrice(item.getSalePrice());
+			detail.setQuantity(buyQty);
+			orderDetailJPA.save(detail);
+			detailList.add(detail);
+			item.setQuantity(item.getQuantity() - buyQty);
+			productJPA.save(item);
+		}
+		savedOrder.setOrderDetails(detailList);
+		cartDetailServices.removeItemsFromCart(user.getId(), ids);
+		return savedOrder;
+	}
+
+	@Transactional
 	public int createOrder(CheckoutBean bean, List<Integer> selectedProdIds) {
 		// Lấy user id từ cookie (theo chuẩn thầy)
 		int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
