@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.fpoly.java5demo.entities.User;
 import com.fpoly.java5demo.jpas.UserJPA;
@@ -21,16 +22,17 @@ public class AuthInterceptor implements HandlerInterceptor {
 	@Autowired
 	private UserJPA userJPA;
 
+	// Hàm này sẽ được kích hoạt sau khi user gửi request và trước khi controller thực thi
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
-		String uri = request.getRequestURI();
+		String path = request.getServletPath();
 
 		try {
 			// 1. Lấy userId từ Cookie (không phụ thuộc Session)
 			String userIdStr = Utils.getCookieValue(Utils.COOKIE_KEY_USER_ID, request);
 			if (userIdStr == null || userIdStr.trim().isEmpty()) {
-				throw new RuntimeException("Chưa đăng nhập - không tìm thấy cookie user_id");
+				throw new RuntimeException("Chưa đăng nhập");
 			}
 
 			int userId = Integer.parseInt(userIdStr.trim());
@@ -38,7 +40,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 			// 2. Kiểm tra trực tiếp vào Database xem user có tồn tại và đang hoạt động không
 			Optional<User> userOptional = userJPA.findById(userId);
 			if (!userOptional.isPresent()) {
-				throw new RuntimeException("Tài khoản không tồn tại trong DB");
+				throw new RuntimeException("Tài khoản không tồn tại");
 			}
 
 			User user = userOptional.get();
@@ -47,7 +49,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 			}
 
 			// 3. Phía ADMIN: Nếu truy cập các URL quản trị (/admin/**)
-			if (uri.startsWith("/admin")) {
+			if (path.startsWith("/admin")) {
 				if (user.getRole() != 1) { // 1: Admin
 					response.sendRedirect("/login");
 					return false;
@@ -55,7 +57,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 			}
 
 			// 4. Phía USER: Tài khoản Admin không được phép mua hàng (checkout, thêm vào giỏ)
-			if ((uri.startsWith("/checkout") || uri.startsWith("/cart/add")) && user.getRole() == 1) {
+			if ((path.startsWith("/checkout") || path.startsWith("/cart/add")) && user.getRole() == 1) {
 				response.sendRedirect("/cart?error=admin_cannot_buy");
 				return false;
 			}
@@ -64,33 +66,25 @@ public class AuthInterceptor implements HandlerInterceptor {
 			request.setAttribute("currentUser", user);
 
 		} catch (Exception e) {
-			// Bất kỳ lỗi nào (chưa có cookie, cookie giả mạo, ID không có trong DB, tài khoản bị khóa)
-			// => Ngắt ngay lập tức TRƯỚC KHI Controller và Service kịp chạy
-			if (uri.startsWith("/admin")) {
-				response.sendRedirect("/login");
-			} else {
-				String redirectUri = uri;
-				if (uri.startsWith("/cart/add")) {
-					String referer = request.getHeader("Referer");
-					if (referer != null && referer.contains("/")) {
-						try {
-							java.net.URI ref = new java.net.URI(referer);
-							redirectUri = ref.getPath();
-							if (ref.getQuery() != null) {
-								redirectUri += "?" + ref.getQuery();
-							}
-						} catch (Exception ignored) {
-							redirectUri = "/cart";
-						}
-					} else {
-						redirectUri = "/cart";
-					}
-				}
-				response.sendRedirect("/login?redirect=" + redirectUri);
-			}
+			e.printStackTrace();
+			response.sendRedirect("/login");
 			return false;
 		}
 
 		return true; // Hợp lệ -> Cho phép đi tiếp vào Controller
+	}
+
+	// Hàm này sẽ được kích hoạt khi controller chạy xong và trước khi render giao diện
+	@Override
+	public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+			ModelAndView modelAndView) throws Exception {
+		HandlerInterceptor.super.postHandle(request, response, handler, modelAndView);
+	}
+
+	// Hàm này sẽ được kích hoạt khi html render thành công và trước khi hiển thị lên giao diện
+	@Override
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler,
+			Exception ex) throws Exception {
+		HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
 	}
 }
