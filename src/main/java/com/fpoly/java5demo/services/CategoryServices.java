@@ -60,7 +60,7 @@ public class CategoryServices {
 	public List<Category> getList() {
 		List<Category> categories = new ArrayList<Category>();
 		try {
-			categories = categoryJPA.findAll();
+			categories = categoryJPA.findAllCategories();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

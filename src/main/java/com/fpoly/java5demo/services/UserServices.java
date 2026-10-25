@@ -22,15 +22,15 @@ public class UserServices {
 	private UserJPA userJPA;
 
 	public String register(RegisterBean bean) {
-		if (userJPA.existsByUsername(bean.getUsername())) {
+		if (userJPA.countByUsername(bean.getUsername()) > 0) {
 			return "Tên tài khoản đã tồn tại!";
 		}
-		if (userJPA.existsByEmail(bean.getEmail())) {
+		if (userJPA.countByEmail(bean.getEmail()) > 0) {
 			return "Email đã được sử dụng!";
 		}
 		// [Vinh] Kiểm tra trùng số điện thoại - phục vụ luồng Order
 		if (bean.getPhone() != null && !bean.getPhone().trim().isEmpty()
-				&& userJPA.existsByPhone(bean.getPhone().trim())) {
+				&& userJPA.countByPhone(bean.getPhone().trim()) > 0) {
 			return "Số điện thoại đã được sử dụng!";
 		}
 
@@ -92,7 +92,11 @@ public class UserServices {
 	}
 
 	public User getUserInfoById(int id) {
-		return userJPA.findById(id).orElse(null);
+		Optional<User> userOptional = userJPA.findById(id);
+		if (!userOptional.isPresent()) {
+			return null;
+		}
+		return userOptional.get();
 	}
 
 	/**
@@ -112,9 +116,9 @@ public class UserServices {
 		if (userIdStr != null && !userIdStr.trim().isEmpty()) {
 			try {
 				int userId = Integer.parseInt(userIdStr.trim());
-				User user = userJPA.findById(userId).orElse(null);
-				if (user != null && user.isStatus()) {
-					return user;
+				Optional<User> userOptional = userJPA.findById(userId);
+				if (userOptional.isPresent() && userOptional.get().isStatus()) {
+					return userOptional.get();
 				}
 			} catch (Exception ignored) {
 			}
@@ -140,16 +144,24 @@ public class UserServices {
 	}
 
 	public List<User> getAllUsers() {
-		return userJPA.findAll();
+		return userJPA.findAllUsers();
 	}
 
 	public User findByEmail(String email) {
-		return userJPA.findByEmail(email).orElse(null);
+		Optional<User> userOptional = userJPA.findByEmail(email);
+		if (!userOptional.isPresent()) {
+			return null;
+		}
+		return userOptional.get();
 	}
 
 	// [Vinh] Tìm user theo SĐT - phục vụ kiểm tra trùng khi cập nhật profile / admin quản lý user
 	public User findByPhone(String phone) {
-		return userJPA.findByPhone(phone).orElse(null);
+		Optional<User> userOptional = userJPA.findByPhone(phone);
+		if (!userOptional.isPresent()) {
+			return null;
+		}
+		return userOptional.get();
 	}
 
 	public User save(User user) {
