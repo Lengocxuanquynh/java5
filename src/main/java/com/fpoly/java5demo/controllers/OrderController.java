@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.fpoly.java5demo.beans.CancelOrderBean;
 import com.fpoly.java5demo.beans.CartItemBean;
@@ -232,7 +233,8 @@ public class OrderController {
 
 	@PostMapping("/user/order/cancel/{id}")
 	public String cancelMyOrder(@PathVariable("id") int id,
-			@Valid @ModelAttribute("cancelBean") CancelOrderBean cancelBean, Errors errors) {
+			@Valid @ModelAttribute("cancelBean") CancelOrderBean cancelBean, Errors errors,
+			RedirectAttributes redirectAttributes) {
 		try {
 			User currentUser = getCurrentUser();
 			if (currentUser == null) {
@@ -241,12 +243,15 @@ public class OrderController {
 
 			// 1. Bắt lỗi bắt buộc nhập lý do bằng Bean Validation (không bắt bằng HTML)
 			if (errors.hasErrors()) {
+				redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng nhập lý do hủy đơn hàng!");
 				return "redirect:/user/orders";
 			}
 
 			orderServices.cancelOrder(id, currentUser.getId(), cancelBean.getReason());
+			redirectAttributes.addFlashAttribute("successMessage", "Đã hủy đơn hàng #" + id + " thành công!");
 		} catch (Exception e) {
 			e.printStackTrace();
+			redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại!");
 		}
 		return "redirect:/user/orders";
 	}
