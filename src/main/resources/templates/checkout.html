@@ -23,12 +23,15 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
 
-      <form th:action="@{/checkout}" th:object="${checkoutBean}" method="post">
+      <form th:action="@{/user/checkout}" th:object="${checkoutBean}" method="post">
 
         <!-- Danh sách items đã chọn thanh toán (truyền trực tiếp qua form, không dùng Session) -->
         <th:block th:if="${selectedItems != null}">
           <input type="hidden" name="items" th:each="itemId : ${selectedItems}" th:value="${itemId}">
         </th:block>
+
+        <!-- Tổng tiền dự kiến mà khách hàng nhìn thấy (dùng để đối chiếu lệch giá nếu Admin đổi giá) -->
+        <input type="hidden" th:field="*{expectedTotal}">
 
         <!-- PolyShop Delivery Address Box with ribbon border effect -->
         <div class="bg-white rounded-3 p-4 shadow-sm mb-4 position-relative border-top border-4 border-danger">
@@ -39,13 +42,13 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label small fw-semibold">Họ và Tên người nhận *</label>
-              <input type="text" class="form-control" th:field="*{fullName}" placeholder="Nguyễn Văn A"
+              <input type="text" class="form-control" th:field="*{fullName}" placeholder="Nhập họ và tên..."
                 th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''">
               <small class="text-danger" th:errors="*{fullName}"></small>
             </div>
             <div class="col-md-6">
               <label class="form-label small fw-semibold">Số điện thoại *</label>
-              <input type="text" class="form-control" th:field="*{phone}" placeholder="0987654321"
+              <input type="text" class="form-control" th:field="*{phone}" placeholder="Nhập số điện thoại..."
                 th:classappend="${#fields.hasErrors('phone')} ? 'is-invalid' : ''">
               <small class="text-danger" th:errors="*{phone}"></small>
             </div>
@@ -53,14 +56,14 @@
               <label class="form-label small fw-semibold">Địa chỉ chi tiết (Số nhà, đường, phường/xã, quận/huyện,
                 tỉnh/thành phố) *</label>
               <input type="text" class="form-control" th:field="*{address}"
-                placeholder="Ví dụ: Tòa nhà FPT Polytechnic, Phố Trịnh Văn Bô, Nam Từ Liêm, Hà Nội"
+                placeholder="Nhập số nhà, tên đường, phường/xã, quận/huyện..."
                 th:classappend="${#fields.hasErrors('address')} ? 'is-invalid' : ''">
               <small class="text-danger" th:errors="*{address}"></small>
             </div>
             <div class="col-12">
               <label class="form-label small fw-semibold">Ghi chú cho shipper (Tùy chọn)</label>
               <input type="text" class="form-control" th:field="*{note}"
-                placeholder="Giao giờ hành chính, gọi trước khi giao...">
+                placeholder="Nhập ghi chú cho người giao hàng (nếu có)...">
             </div>
           </div>
         </div>

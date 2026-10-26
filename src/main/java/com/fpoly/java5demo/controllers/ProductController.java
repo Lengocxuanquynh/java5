@@ -52,6 +52,8 @@ public class ProductController {
 		model.addAttribute("products", productServices.getList());
 		model.addAttribute("categories", categoryServices.getList());
 		model.addAttribute("orders", orderServices.getAllOrders());
+		model.addAttribute("processingOrders", orderServices.getProcessingOrders());
+		model.addAttribute("completedOrders", orderServices.getCompletedOrders());
 		model.addAttribute("users", userServices.getAllUsers());
 	}
 

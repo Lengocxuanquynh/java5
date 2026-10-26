@@ -142,7 +142,7 @@
               <span id="selectedTotalDisplay" class="fs-4 fw-bold text-danger"
                 th:text="${#numbers.formatDecimal(totalAmount, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</span>
             </div>
-            <form id="checkoutForm" th:action="@{/checkout}" method="get" class="m-0">
+            <form id="checkoutForm" th:action="@{/user/checkout}" method="get" class="m-0">
               <button th:if="${currentUser == null || currentUser.role != 1}" type="submit" id="btnCheckout"
                 class="btn btn-polyshop-orange px-5 py-2 fw-bold shadow-sm">
                 MUA HÀNG

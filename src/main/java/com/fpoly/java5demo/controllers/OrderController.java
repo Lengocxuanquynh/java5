@@ -1,5 +1,6 @@
 package com.fpoly.java5demo.controllers;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +12,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.fpoly.java5demo.beans.CancelOrderBean;
 import com.fpoly.java5demo.beans.CartItemBean;
 import com.fpoly.java5demo.beans.CheckoutBean;
 import com.fpoly.java5demo.entities.Order;
@@ -25,7 +26,7 @@ import com.fpoly.java5demo.services.UserServices;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
-// [Vinh] Controller xử lý luồng bán hàng - code theo chuẩn thầy (Java5-SD21201)
+// [Vinh] Controller xử lý luồng bán hàng
 // Dùng Cookie + Interceptor lấy user, try-catch bắt lỗi, redirect khi thất bại
 @Controller
 public class OrderController {
@@ -50,14 +51,14 @@ public class OrderController {
 	 * [Vinh] Trang checkout - điền thông tin đặt hàng
 	 * Tự động kéo SĐT và Địa chỉ từ tài khoản user lên form (nhưng vẫn cho sửa)
 	 */
-	@GetMapping("/checkout")
+	@GetMapping({ "/user/checkout", "/checkout" })
 	public String checkoutPage(@RequestParam(name = "items", required = false) List<Integer> items,
 			Model model) {
 		try {
 			User currentUser = getCurrentUser();
 
 			if (currentUser == null) {
-				return "redirect:/login?redirect=/checkout";
+				return "redirect:/login?redirect=/user/checkout";
 			}
 
 			// Admin không được mua hàng
@@ -65,30 +66,17 @@ public class OrderController {
 				return "redirect:/cart?error=admin_cannot_buy";
 			}
 
-			// Lấy danh sách sản phẩm trong giỏ (nếu có items được chọn thì lọc, không thì lấy hết)
-			List<CartItemBean> cartItems;
-			if (items != null && !items.isEmpty()) {
-				cartItems = cartDetailServices.getCartItems(items);
-			} else {
-				cartItems = cartDetailServices.getCartItems();
-			}
-
+			// Lấy danh sách sản phẩm trong giỏ qua OrderServices
+			List<CartItemBean> cartItems = orderServices.getCheckoutCartItems(items);
 			if (cartItems.isEmpty()) {
 				return "redirect:/cart";
 			}
 
-			int totalAmount = 0;
-			int totalQuantity = 0;
-			for (CartItemBean item : cartItems) {
-				totalAmount += item.getSubTotal();
-				totalQuantity += item.getQuantity();
-			}
+			int totalAmount = orderServices.calculateTotalAmount(cartItems);
+			int totalQuantity = orderServices.calculateTotalQuantity(cartItems);
 
-			// Tự động điền thông tin từ tài khoản user (theo chuẩn thầy)
-			CheckoutBean bean = new CheckoutBean();
-			bean.setFullName(currentUser.getName());
-			bean.setPhone(currentUser.getPhone());
-			bean.setAddress(currentUser.getAddress()); // [Vinh] Kéo địa chỉ mặc định từ user
+			// Tự động điền thông tin từ tài khoản user qua OrderServices
+			CheckoutBean bean = orderServices.initCheckoutBean(currentUser, totalAmount);
 
 			model.addAttribute("currentUser", currentUser);
 			model.addAttribute("checkoutBean", bean);
@@ -100,43 +88,36 @@ public class OrderController {
 			return "checkout";
 		} catch (Exception e) {
 			e.printStackTrace();
-			return "redirect:/login?redirect=/checkout";
+			return "redirect:/login?redirect=/user/checkout";
 		}
 	}
 
 	/**
 	 * [Vinh] Xử lý đặt hàng - POST
-	 * Dùng try-catch theo chuẩn thầy
+
 	 */
-	@PostMapping("/checkout")
+	@PostMapping({ "/user/checkout", "/checkout" })
 	public String placeOrder(@Valid @ModelAttribute("checkoutBean") CheckoutBean bean, Errors errors,
 			@RequestParam(name = "items", required = false) List<Integer> items,
-			Model model, RedirectAttributes redirectAttributes) {
+			Model model) {
 		try {
 			User currentUser = getCurrentUser();
 
 			if (currentUser == null) {
-				return "redirect:/login?redirect=/checkout";
+				return "redirect:/login?redirect=/user/checkout";
 			}
 
 			if (currentUser.getRole() == 1) {
 				return "redirect:/cart?error=admin_cannot_buy";
 			}
 
-			List<CartItemBean> cartItems = (items != null && !items.isEmpty())
-					? cartDetailServices.getCartItems(items)
-					: cartDetailServices.getCartItems();
-
+			List<CartItemBean> cartItems = orderServices.getCheckoutCartItems(items);
 			if (cartItems.isEmpty()) {
 				return "redirect:/cart";
 			}
 
-			int totalAmount = 0;
-			int totalQuantity = 0;
-			for (CartItemBean item : cartItems) {
-				totalAmount += item.getSubTotal();
-				totalQuantity += item.getQuantity();
-			}
+			int totalAmount = orderServices.calculateTotalAmount(cartItems);
+			int totalQuantity = orderServices.calculateTotalQuantity(cartItems);
 
 			if (errors.hasErrors()) {
 				model.addAttribute("currentUser", currentUser);
@@ -147,18 +128,21 @@ public class OrderController {
 				return "checkout";
 			}
 
-			// Tạo đơn hàng (theo chuẩn thầy - try-catch)
+			// Tạo đơn hàng
 			int orderId = orderServices.createOrder(bean, items);
 
-			return "redirect:/order/success/" + orderId;
+			return "redirect:/user/order-success/" + orderId;
 		} catch (Exception e) {
 			e.printStackTrace();
-			redirectAttributes.addFlashAttribute("errorMessage", "Đơn hàng không thể hoàn tất: " + e.getMessage());
-			return "redirect:/cart";
+			String redirectUrl = "redirect:/user/checkout";
+			if (items != null && !items.isEmpty()) {
+				redirectUrl += "?items=" + items.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining("&items="));
+			}
+			return redirectUrl;
 		}
 	}
 
-	@GetMapping("/order/success/{id}")
+	@GetMapping({ "/user/order-success/{id}", "/order/success/{id}" })
 	public String orderSuccess(@PathVariable("id") int id, Model model) {
 		try {
 			User currentUser = getCurrentUser();
@@ -199,7 +183,19 @@ public class OrderController {
 			}
 
 			List<Order> orders = orderServices.getOrdersByUser(currentUser.getId());
+			List<Order> processingOrders = new ArrayList<>();
+			List<Order> completedOrders = new ArrayList<>();
+			for (Order o : orders) {
+				if (o.getStatus() >= 1 && o.getStatus() <= 4) {
+					processingOrders.add(o);
+				} else if (o.getStatus() == 5 || o.getStatus() == 6) {
+					completedOrders.add(o);
+				}
+			}
+
 			model.addAttribute("orders", orders);
+			model.addAttribute("processingOrders", processingOrders);
+			model.addAttribute("completedOrders", completedOrders);
 			model.addAttribute("currentUser", currentUser);
 			model.addAttribute("cartCount", cartDetailServices.getTotalQuantity());
 			return "user/orders";
@@ -235,46 +231,37 @@ public class OrderController {
 	}
 
 	@PostMapping("/user/order/cancel/{id}")
-	public String cancelMyOrder(@PathVariable("id") int id, RedirectAttributes redirectAttributes) {
+	public String cancelMyOrder(@PathVariable("id") int id,
+			@Valid @ModelAttribute("cancelBean") CancelOrderBean cancelBean, Errors errors) {
 		try {
 			User currentUser = getCurrentUser();
 			if (currentUser == null) {
 				return "redirect:/login?redirect=/user/orders";
 			}
 
-			boolean success = orderServices.cancelOrder(id, currentUser.getId());
-			if (success) {
-				redirectAttributes.addFlashAttribute("successMessage", "Hủy đơn hàng #" + id + " thành công!");
-			} else {
-				redirectAttributes.addFlashAttribute("errorMessage",
-						"Không thể hủy đơn hàng! (Chỉ được hủy đơn khi ở trạng thái Chờ xác nhận)");
+			// 1. Bắt lỗi bắt buộc nhập lý do bằng Bean Validation (không bắt bằng HTML)
+			if (errors.hasErrors()) {
+				return "redirect:/user/orders";
 			}
+
+			orderServices.cancelOrder(id, currentUser.getId(), cancelBean.getReason());
 		} catch (Exception e) {
 			e.printStackTrace();
-			redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra khi hủy đơn hàng!");
 		}
 		return "redirect:/user/orders";
 	}
 
 	@PostMapping("/user/order/received/{id}")
-	public String confirmReceivedOrder(@PathVariable("id") int id, RedirectAttributes redirectAttributes) {
+	public String confirmReceivedOrder(@PathVariable("id") int id) {
 		try {
 			User currentUser = getCurrentUser();
 			if (currentUser == null) {
 				return "redirect:/login?redirect=/user/orders";
 			}
 
-			boolean success = orderServices.confirmReceived(id, currentUser.getId());
-			if (success) {
-				redirectAttributes.addFlashAttribute("successMessage",
-						"Đã xác nhận nhận hàng cho đơn #" + id + " thành công!");
-			} else {
-				redirectAttributes.addFlashAttribute("errorMessage",
-						"Không thể xác nhận! (Chỉ được xác nhận khi đơn ở trạng thái Đã giao hàng)");
-			}
+			orderServices.confirmReceived(id, currentUser.getId());
 		} catch (Exception e) {
 			e.printStackTrace();
-			redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra khi xác nhận nhận hàng!");
 		}
 		return "redirect:/user/orders";
 	}

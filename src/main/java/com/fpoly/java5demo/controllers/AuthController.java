@@ -42,7 +42,7 @@ public class AuthController {
 		}
 
 		try {
-			// Đăng nhập Cookie thuần túy theo chuẩn thầy (không lưu Session)
+			// Đăng nhập bằng Cookie (không lưu Session)
 			User user = userServices.login(bean.getUsername(), bean.getPassword(), response);
 
 			if (redirect != null && !redirect.trim().isEmpty() && redirect.startsWith("/")
