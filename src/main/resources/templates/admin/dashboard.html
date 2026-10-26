@@ -567,60 +567,199 @@
             </div>
           </div>
 
-          <!-- Orders Table Card -->
+          <!-- Orders Table Card with 2 Main Tabs (Đang Xử Lý vs Đã Hoàn Thành) -->
           <div class="bg-white rounded-3 p-4 shadow-sm border mb-4">
-            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-              <h5 class="fw-bold text-dark mb-0">
-                <i class="bi bi-receipt-cutoff text-danger me-2"></i>Danh Sách Đơn Hàng Toàn Sàn
-              </h5>
-              <span class="badge bg-secondary px-3 py-2" th:text="${#lists.size(orders)} + ' đơn hàng'">0</span>
+            <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-3 gap-2">
+              <div>
+                <h5 class="fw-bold text-dark mb-1">
+                  <i class="bi bi-receipt-cutoff text-danger me-2"></i>Quản Lý Đơn Hàng
+                </h5>
+                <p class="text-muted small mb-0">Phân luồng đơn hàng giúp Admin xử lý nhanh, không bị lẫn với đơn đã xong</p>
+              </div>
+
+              <!-- Sub Tabs (Nav Pills) -->
+              <ul class="nav nav-pills" id="orderSubTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active fw-semibold d-flex align-items-center gap-1 btn-sm px-3"
+                          id="tab-sub-processing" data-bs-toggle="pill" data-bs-target="#pane-sub-processing" type="button" role="tab">
+                    <i class="bi bi-hourglass-split me-1 text-warning"></i>Đang Xử Lý
+                    <span class="badge bg-warning text-dark rounded-pill ms-1"
+                          th:text="${processingOrders != null ? #lists.size(processingOrders) : 0}">0</span>
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link fw-semibold d-flex align-items-center gap-1 btn-sm px-3"
+                          id="tab-sub-completed" data-bs-toggle="pill" data-bs-target="#pane-sub-completed" type="button" role="tab">
+                    <i class="bi bi-check2-circle me-1 text-success"></i>Đã Hoàn Thành
+                    <span class="badge bg-success rounded-pill ms-1"
+                          th:text="${completedOrders != null ? #lists.size(completedOrders) : 0}">0</span>
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link fw-semibold d-flex align-items-center gap-1 btn-sm px-3"
+                          id="tab-sub-all" data-bs-toggle="pill" data-bs-target="#pane-sub-all" type="button" role="tab">
+                    <i class="bi bi-list-ul me-1"></i>Tất Cả
+                    <span class="badge bg-secondary rounded-pill ms-1"
+                          th:text="${orders != null ? #lists.size(orders) : 0}">0</span>
+                  </button>
+                </li>
+              </ul>
             </div>
 
-            <div th:if="${#lists.isEmpty(orders)}" class="p-5 text-center text-muted">
-              <i class="bi bi-inbox fs-1"></i>
-              <p class="mt-2 mb-0">Chưa có đơn hàng nào.</p>
-            </div>
+            <!-- Tab Content: Đang Xử Lý vs Đã Hoàn Thành -->
+            <div class="tab-content" id="orderSubTabContent">
 
-            <div th:if="${!#lists.isEmpty(orders)}" class="table-responsive">
-              <table class="table table-hover align-middle small">
-                <thead class="table-light">
-                  <tr>
-                    <th>Mã Đơn</th>
-                    <th>Khách Hàng</th>
-                    <th>Ngày Đặt</th>
-                    <th>Địa Chỉ Nhận Hàng</th>
-                    <th>Tổng Tiền</th>
-                    <th>Trạng Thái</th>
-                    <th class="text-end" style="width: 140px;">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr th:each="o : ${orders}">
-                    <td class="fw-bold text-danger" th:text="'#' + ${o.id}">#1</td>
-                    <td>
-                      <strong class="text-dark d-block" th:text="${o.user != null ? o.user.name : 'Khách hàng'}">Tên</strong>
-                      <div class="text-muted small" th:text="${o.user != null ? o.user.email : ''}">email</div>
-                    </td>
-                    <td th:text="${o.date}">2026-09-26</td>
-                    <td class="text-truncate" style="max-width: 250px;" th:text="${o.shippingAddress}" th:title="${o.shippingAddress}">Địa chỉ</td>
-                    <td class="fw-bold text-danger"
-                        th:text="${#numbers.formatDecimal(o.totalPrice, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</td>
-                    <td>
-                      <span th:if="${o.status == 1}" class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>1 - Chờ xác nhận</span>
-                      <span th:if="${o.status == 2}" class="badge bg-info text-white"><i class="bi bi-check2-circle me-1"></i>2 - Đã xác nhận</span>
-                      <span th:if="${o.status == 3}" class="badge bg-primary text-white"><i class="bi bi-truck me-1"></i>3 - Đang giao hàng</span>
-                      <span th:if="${o.status == 4}" class="badge bg-primary-subtle text-primary border border-primary"><i class="bi bi-box-seam me-1"></i>4 - Đã giao hàng</span>
-                      <span th:if="${o.status == 5}" class="badge bg-success text-white"><i class="bi bi-patch-check-fill me-1"></i>5 - Đã nhận hàng</span>
-                      <span th:if="${o.status == 6}" class="badge bg-secondary text-white"><i class="bi bi-x-circle me-1"></i>6 - Đã hủy</span>
-                    </td>
-                    <td class="text-end">
-                      <a th:href="@{'/admin/order/' + ${o.id}}" class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-eye me-1"></i>Chi Tiết
-                      </a>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <!-- ============================================================== -->
+              <!-- TAB 1: ĐƠN ĐANG XỬ LÝ (Status 1, 2, 3, 4)                      -->
+              <!-- ============================================================== -->
+              <div class="tab-pane fade show active" id="pane-sub-processing" role="tabpanel">
+                <div th:if="${#lists.isEmpty(processingOrders)}" class="p-5 text-center text-muted">
+                  <i class="bi bi-check2-circle text-success fs-1"></i>
+                  <h6 class="fw-bold mt-2 text-dark">Hiện không có đơn hàng nào cần xử lý!</h6>
+                  <p class="small text-muted mb-0">Tất cả đơn hàng đều đã được xử lý hoàn tất hoặc giao thành công.</p>
+                </div>
+
+                <div th:if="${!#lists.isEmpty(processingOrders)}" class="table-responsive">
+                  <table class="table table-hover align-middle small">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Mã Đơn</th>
+                        <th>Khách Hàng</th>
+                        <th>Ngày Đặt</th>
+                        <th>Địa Chỉ Nhận Hàng</th>
+                        <th>Tổng Tiền</th>
+                        <th>Trạng Thái</th>
+                        <th class="text-end" style="width: 150px;">Thao Tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr th:each="o : ${processingOrders}">
+                        <td class="fw-bold text-danger" th:text="'#' + ${o.id}">#1</td>
+                        <td>
+                          <strong class="text-dark d-block" th:text="${o.shippingName != null ? o.shippingName : (o.user != null ? o.user.name : 'Khách hàng')}">Tên</strong>
+                          <div class="text-muted small" th:text="${o.shippingPhone != null ? o.shippingPhone : (o.user != null ? o.user.phone : '')}">SĐT</div>
+                        </td>
+                        <td th:text="${o.date}">2026-09-26</td>
+                        <td class="text-truncate" style="max-width: 250px;" th:text="${o.shippingAddress}" th:title="${o.shippingAddress}">Địa chỉ</td>
+                        <td class="fw-bold text-danger"
+                            th:text="${#numbers.formatDecimal(o.totalPrice, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</td>
+                        <td>
+                          <span th:if="${o.status == 1}" class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>1 - Chờ xác nhận</span>
+                          <span th:if="${o.status == 2}" class="badge bg-info text-white"><i class="bi bi-check2-circle me-1"></i>2 - Đã xác nhận</span>
+                          <span th:if="${o.status == 3}" class="badge bg-primary text-white"><i class="bi bi-truck me-1"></i>3 - Đang giao hàng</span>
+                          <span th:if="${o.status == 4}" class="badge bg-primary-subtle text-primary border border-primary"><i class="bi bi-box-seam me-1"></i>4 - Đã giao hàng</span>
+                        </td>
+                        <td class="text-end">
+                          <a th:href="@{'/admin/order/' + ${o.id}}" class="btn btn-sm btn-danger fw-semibold">
+                            <i class="bi bi-pencil-square me-1"></i>Xử Lý Đơn
+                          </a>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- ============================================================== -->
+              <!-- TAB 2: ĐƠN ĐÃ HOÀN THÀNH & ĐÃ HỦY (Status 5, 6)                -->
+              <!-- ============================================================== -->
+              <div class="tab-pane fade" id="pane-sub-completed" role="tabpanel">
+                <div th:if="${#lists.isEmpty(completedOrders)}" class="p-5 text-center text-muted">
+                  <i class="bi bi-inbox fs-1"></i>
+                  <p class="mt-2 mb-0">Chưa có đơn hàng nào hoàn thành hoặc đã hủy.</p>
+                </div>
+
+                <div th:if="${!#lists.isEmpty(completedOrders)}" class="table-responsive">
+                  <table class="table table-hover align-middle small">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Mã Đơn</th>
+                        <th>Khách Hàng</th>
+                        <th>Ngày Đặt</th>
+                        <th>Địa Chỉ Nhận Hàng</th>
+                        <th>Tổng Tiền</th>
+                        <th>Trạng Thái</th>
+                        <th class="text-end" style="width: 150px;">Thao Tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr th:each="o : ${completedOrders}">
+                        <td class="fw-bold text-muted" th:text="'#' + ${o.id}">#1</td>
+                        <td>
+                          <strong class="text-dark d-block" th:text="${o.shippingName != null ? o.shippingName : (o.user != null ? o.user.name : 'Khách hàng')}">Tên</strong>
+                          <div class="text-muted small" th:text="${o.shippingPhone != null ? o.shippingPhone : (o.user != null ? o.user.phone : '')}">SĐT</div>
+                        </td>
+                        <td th:text="${o.date}">2026-09-26</td>
+                        <td class="text-truncate" style="max-width: 250px;" th:text="${o.shippingAddress}" th:title="${o.shippingAddress}">Địa chỉ</td>
+                        <td class="fw-bold text-dark"
+                            th:text="${#numbers.formatDecimal(o.totalPrice, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</td>
+                        <td>
+                          <span th:if="${o.status == 5}" class="badge bg-success text-white"><i class="bi bi-patch-check-fill me-1"></i>5 - Đã nhận hàng</span>
+                          <span th:if="${o.status == 6}" class="badge bg-secondary text-white"><i class="bi bi-x-circle me-1"></i>6 - Đã hủy</span>
+                        </td>
+                        <td class="text-end">
+                          <a th:href="@{'/admin/order/' + ${o.id}}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye me-1"></i>Xem Chi Tiết
+                          </a>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- ============================================================== -->
+              <!-- TAB 3: TẤT CẢ ĐƠN HÀNG                                         -->
+              <!-- ============================================================== -->
+              <div class="tab-pane fade" id="pane-sub-all" role="tabpanel">
+                <div th:if="${#lists.isEmpty(orders)}" class="p-5 text-center text-muted">
+                  <i class="bi bi-inbox fs-1"></i>
+                  <p class="mt-2 mb-0">Chưa có đơn hàng nào trong hệ thống.</p>
+                </div>
+
+                <div th:if="${!#lists.isEmpty(orders)}" class="table-responsive">
+                  <table class="table table-hover align-middle small">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Mã Đơn</th>
+                        <th>Khách Hàng</th>
+                        <th>Ngày Đặt</th>
+                        <th>Địa Chỉ Nhận Hàng</th>
+                        <th>Tổng Tiền</th>
+                        <th>Trạng Thái</th>
+                        <th class="text-end" style="width: 150px;">Thao Tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr th:each="o : ${orders}">
+                        <td class="fw-bold text-danger" th:text="'#' + ${o.id}">#1</td>
+                        <td>
+                          <strong class="text-dark d-block" th:text="${o.shippingName != null ? o.shippingName : (o.user != null ? o.user.name : 'Khách hàng')}">Tên</strong>
+                          <div class="text-muted small" th:text="${o.shippingPhone != null ? o.shippingPhone : (o.user != null ? o.user.phone : '')}">SĐT</div>
+                        </td>
+                        <td th:text="${o.date}">2026-09-26</td>
+                        <td class="text-truncate" style="max-width: 250px;" th:text="${o.shippingAddress}" th:title="${o.shippingAddress}">Địa chỉ</td>
+                        <td class="fw-bold text-danger"
+                            th:text="${#numbers.formatDecimal(o.totalPrice, 0, 'POINT', 0, 'COMMA')} + ' ₫'">0 ₫</td>
+                        <td>
+                          <span th:if="${o.status == 1}" class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>1 - Chờ xác nhận</span>
+                          <span th:if="${o.status == 2}" class="badge bg-info text-white"><i class="bi bi-check2-circle me-1"></i>2 - Đã xác nhận</span>
+                          <span th:if="${o.status == 3}" class="badge bg-primary text-white"><i class="bi bi-truck me-1"></i>3 - Đang giao hàng</span>
+                          <span th:if="${o.status == 4}" class="badge bg-primary-subtle text-primary border border-primary"><i class="bi bi-box-seam me-1"></i>4 - Đã giao hàng</span>
+                          <span th:if="${o.status == 5}" class="badge bg-success text-white"><i class="bi bi-patch-check-fill me-1"></i>5 - Đã nhận hàng</span>
+                          <span th:if="${o.status == 6}" class="badge bg-secondary text-white"><i class="bi bi-x-circle me-1"></i>6 - Đã hủy</span>
+                        </td>
+                        <td class="text-end">
+                          <a th:href="@{'/admin/order/' + ${o.id}}" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-eye me-1"></i>Chi Tiết
+                          </a>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>

@@ -11,8 +11,8 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import com.fpoly.java5demo.beans.CartItemBean;
 import com.fpoly.java5demo.beans.CheckoutBean;
 import com.fpoly.java5demo.entities.Order;
 import com.fpoly.java5demo.entities.OrderDetail;
@@ -26,7 +26,7 @@ import com.fpoly.java5demo.utils.Utils;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-// [Vinh] Service xử lý luồng bán hàng - code theo chuẩn thầy (Java5-SD21201)
+// [Vinh] Service xử lý luồng bán hàng
 // Dùng Cookie lấy userId, Optional kiểm tra, throw RuntimeException khi lỗi
 @Service
 public class OrderServices {
@@ -50,20 +50,65 @@ public class OrderServices {
 	private CartDetailServices cartDetailServices;
 
 	/**
+	 * [Vinh] Lấy danh sách sản phẩm hiển thị trên trang Checkout:
+	 * Nếu user tích chọn các sản phẩm cụ thể thì lấy theo items, ngược lại lấy toàn bộ giỏ
+	 */
+	public List<CartItemBean> getCheckoutCartItems(List<Integer> itemIds) {
+		if (itemIds != null && !itemIds.isEmpty()) {
+			return cartDetailServices.getCartItems(itemIds);
+		}
+		return cartDetailServices.getCartItems();
+	}
+
+	/**
+	 * [Vinh] Tính tổng tiền của danh sách sản phẩm checkout
+	 */
+	public int calculateTotalAmount(List<CartItemBean> cartItems) {
+		int total = 0;
+		if (cartItems != null) {
+			for (CartItemBean item : cartItems) {
+				total += item.getSubTotal();
+			}
+		}
+		return total;
+	}
+
+	/**
+	 * [Vinh] Tính tổng số lượng sản phẩm trong giỏ checkout
+	 */
+	public int calculateTotalQuantity(List<CartItemBean> cartItems) {
+		int count = 0;
+		if (cartItems != null) {
+			for (CartItemBean item : cartItems) {
+				count += item.getQuantity();
+			}
+		}
+		return count;
+	}
+
+	/**
+	 * [Vinh] Khởi tạo form CheckoutBean điền sẵn thông tin user và tổng tiền dự kiến
+	 */
+	public CheckoutBean initCheckoutBean(User user, int totalAmount) {
+		CheckoutBean bean = new CheckoutBean();
+		if (user != null) {
+			bean.setFullName(user.getName());
+			bean.setPhone(user.getPhone());
+			bean.setAddress(user.getAddress());
+		}
+		bean.setExpectedTotal(totalAmount);
+		return bean;
+	}
+
+	/**
 	 * [Vinh] Tạo đơn hàng - đặt toàn bộ hoặc chỉ các sản phẩm được chọn từ giỏ
 	 * hàng.
 	 * Lưu riêng 4 cột: shippingName, shippingPhone, shippingAddress, note
-	 * (theo chuẩn thầy - không ghép chuỗi vào 1 cột address).
+
 	 * Trừ tồn kho khi đặt hàng thành công. Xóa sản phẩm đã mua khỏi giỏ.
 	 * 
 	 * @return id đơn hàng vừa tạo
 	 */
-	@Transactional
-	public int createOrder(CheckoutBean bean) {
-		return createOrder(bean, null);
-	}
-
-	@Transactional
 	public Order createOrder(User user, CheckoutBean bean) {
 		if (user == null || user.getRole() == 1) {
 			return null;
@@ -115,9 +160,12 @@ public class OrderServices {
 		return savedOrder;
 	}
 
-	@Transactional
+	public int createOrder(CheckoutBean bean) {
+		return createOrder(bean, null);
+	}
+
 	public int createOrder(CheckoutBean bean, List<Integer> selectedProdIds) {
-		// Lấy user id từ cookie (theo chuẩn thầy)
+		// Lấy user id từ cookie
 		int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
 		Optional<User> userOptional = userJPA.findById(userId);
 
@@ -126,6 +174,11 @@ public class OrderServices {
 		}
 
 		User user = userOptional.get();
+
+		// Kiểm tra tài khoản có bị khóa không
+		if (!user.isStatus()) {
+			throw new RuntimeException("Tài khoản đã bị khóa!");
+		}
 
 		// Tài khoản Admin không được phép đặt hàng
 		if (user.getRole() == 1) {
@@ -169,7 +222,16 @@ public class OrderServices {
 			totalPrice += buyQty * item.getSalePrice();
 		}
 
-		// Tạo đơn hàng - lưu riêng 4 cột thông tin giao hàng (theo chuẩn thầy)
+		// Kiểm tra lệch giá: Nếu Admin đổi giá sản phẩm trước khi user bấm đặt hàng
+		if (bean.getExpectedTotal() != null && bean.getExpectedTotal() > 0
+				&& bean.getExpectedTotal().intValue() != totalPrice) {
+			throw new RuntimeException(
+					"Giá sản phẩm đã được thay đổi trong lúc bạn đặt hàng (Tổng tiền cập nhật từ "
+							+ String.format("%,d", bean.getExpectedTotal()) + " ₫ thành "
+							+ String.format("%,d", totalPrice) + " ₫). Vui lòng kiểm tra lại đơn hàng!");
+		}
+
+		// Tạo đơn hàng - lưu riêng 4 cột thông tin giao hàng
 		Order order = new Order();
 		order.setShippingName(bean.getFullName());
 		order.setShippingPhone(bean.getPhone());
@@ -228,6 +290,24 @@ public class OrderServices {
 		return orderJPA.findAllByOrderByDateDesc();
 	}
 
+	/**
+	 * [Vinh] Lấy các đơn hàng ĐANG XỬ LÝ (status 1, 2, 3, 4) để admin thao tác thuận tiện
+	 */
+	public List<Order> getProcessingOrders() {
+		return getAllOrders().stream()
+				.filter(o -> o.getStatus() >= 1 && o.getStatus() <= 4)
+				.toList();
+	}
+
+	/**
+	 * [Vinh] Lấy các đơn hàng ĐÃ HOÀN TẤT / KẾT THÚC (status 5: Đã nhận hàng, status 6: Đã hủy)
+	 */
+	public List<Order> getCompletedOrders() {
+		return getAllOrders().stream()
+				.filter(o -> o.getStatus() == 5 || o.getStatus() == 6)
+				.toList();
+	}
+
 	public List<OrderDetail> getOrderDetails(int orderId) {
 		return orderDetailJPA.findByOrderId(orderId);
 	}
@@ -263,8 +343,7 @@ public class OrderServices {
 	 *   + 1 -> 6 (Huỷ đơn)
 	 *   + 2 -> 6 (Huỷ đơn)
 	 */
-	@Transactional
-	public boolean updateStatus(int orderId, int newStatus) {
+	public boolean updateStatus(int orderId, int newStatus, String cancelReason) {
 		Optional<Order> orderOptional = orderJPA.findById(orderId);
 		if (!orderOptional.isPresent()) {
 			return false;
@@ -287,15 +366,24 @@ public class OrderServices {
 			return false;
 		}
 
-		// Nếu chuyển sang hủy (6), hoàn lại tồn kho
+		// Nếu chuyển sang hủy (6), hoàn lại tồn kho và lưu lý do
 		if (newStatus == 6) {
 			restoreStock(orderId);
+			if (cancelReason != null && !cancelReason.trim().isEmpty()) {
+				order.setCancelReason("Admin hủy: " + cancelReason.trim());
+			} else {
+				order.setCancelReason("Admin hủy đơn hàng");
+			}
 		}
 
 		order.setStatus(newStatus);
 		order.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
 		orderJPA.save(order);
 		return true;
+	}
+
+	public boolean updateStatus(int orderId, int newStatus) {
+		return updateStatus(orderId, newStatus, null);
 	}
 
 	/**
@@ -305,8 +393,7 @@ public class OrderServices {
 	 * - Trạng thái đơn luôn kiểm tra ở DB
 	 * - Khi thay đổi nhớ cập nhật giá trị của updated_at
 	 */
-	@Transactional
-	public boolean adminCancelOrder(int orderId) {
+	public boolean adminCancelOrder(int orderId, String cancelReason) {
 		Optional<Order> orderOptional = orderJPA.findById(orderId);
 		if (!orderOptional.isPresent()) {
 			return false;
@@ -316,12 +403,21 @@ public class OrderServices {
 		int currentStatus = order.getStatus();
 		if (currentStatus == 1 || currentStatus == 2) {
 			order.setStatus(6); // 6: Huỷ đơn
+			if (cancelReason != null && !cancelReason.trim().isEmpty()) {
+				order.setCancelReason("Admin hủy: " + cancelReason.trim());
+			} else {
+				order.setCancelReason("Admin hủy đơn hàng");
+			}
 			order.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
 			orderJPA.save(order);
 			restoreStock(orderId);
 			return true;
 		}
 		return false;
+	}
+
+	public boolean adminCancelOrder(int orderId) {
+		return adminCancelOrder(orderId, null);
 	}
 
 	/**
@@ -331,8 +427,7 @@ public class OrderServices {
 	 * - Trạng thái đơn luôn kiểm tra ở DB
 	 * - Khi thay đổi nhớ cập nhật giá trị của updated_at
 	 */
-	@Transactional
-	public boolean cancelOrder(int orderId, int userId) {
+	public boolean cancelOrder(int orderId, int userId, String cancelReason) {
 		Optional<Order> orderOptional = orderJPA.findById(orderId);
 		if (!orderOptional.isPresent()) {
 			return false;
@@ -346,12 +441,21 @@ public class OrderServices {
 		// Chỉ cho hủy khi đơn hàng ở trạng thái 1 (Chờ xác nhận)
 		if (order.getStatus() == 1) {
 			order.setStatus(6); // 6: Huỷ đơn
+			if (cancelReason != null && !cancelReason.trim().isEmpty()) {
+				order.setCancelReason("Khách hàng hủy: " + cancelReason.trim());
+			} else {
+				order.setCancelReason("Khách hàng yêu cầu hủy đơn");
+			}
 			order.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
 			orderJPA.save(order);
 			restoreStock(orderId);
 			return true;
 		}
 		return false;
+	}
+
+	public boolean cancelOrder(int orderId, int userId) {
+		return cancelOrder(orderId, userId, null);
 	}
 
 	/**
@@ -361,7 +465,6 @@ public class OrderServices {
 	 * - Chỉ được xác nhận khi trạng thái đơn trước đó là 4 ("Đã giao hàng")
 	 *   => chuyển sang 5 ("Đã nhận hàng / Hoàn thành")
 	 */
-	@Transactional
 	public boolean confirmReceived(int orderId, int userId) {
 		Optional<Order> orderOptional = orderJPA.findById(orderId);
 		if (!orderOptional.isPresent()) {

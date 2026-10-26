@@ -88,6 +88,7 @@ CREATE TABLE orders (
     total_price INT NOT NULL DEFAULT 0,
     date DATE NOT NULL,
     status INT NOT NULL DEFAULT 1,         -- 1: Chờ xác nhận, 2: Đã xác nhận, 3: Đang giao, 4: Đã giao, 5: Đã nhận, 6: Hủy
+    cancel_reason NVARCHAR(255),           -- Lý do hủy đơn (User hoặc Admin hủy)
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     user_id INT NOT NULL,
     CONSTRAINT FK_Orders_Users FOREIGN KEY (user_id) REFERENCES users(id)
@@ -137,16 +138,18 @@ INSERT INTO products (name, price, quantity, status, cat_id) VALUES
 GO
 
 -- D. Đơn hàng mẫu
-INSERT INTO orders (shipping_name, shipping_phone, shipping_address, note, total_price, date, status, user_id) VALUES 
-(N'Nguyễn Văn A', '0912345678', N'Tòa FPT Polytechnic, Phố Trịnh Văn Bô, Nam Từ Liêm, Hà Nội', N'Giao giờ hành chính', 530000, '2026-09-25', 1, 2),
-(N'Trần Thị Bích', '0988776655', N'123 Đường Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh', NULL, 350000, '2026-09-26', 1, 3);
+INSERT INTO orders (shipping_name, shipping_phone, shipping_address, note, total_price, date, status, cancel_reason, user_id) VALUES 
+(N'Nguyễn Văn A', '0912345678', N'Tòa FPT Polytechnic, Phố Trịnh Văn Bô, Nam Từ Liêm, Hà Nội', N'Giao giờ hành chính', 530000, '2026-09-25', 1, NULL, 2),
+(N'Trần Thị Bích', '0988776655', N'123 Đường Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh', NULL, 350000, '2026-09-26', 1, NULL, 3),
+(N'Nguyễn Văn A', '0912345678', N'Tòa FPT Polytechnic, Phố Trịnh Văn Bô, Nam Từ Liêm, Hà Nội', NULL, 220000, '2026-09-27', 6, N'Khách hàng hủy: Đổi ý không muốn mua nữa', 2);
 GO
 
 -- E. Chi tiết đơn hàng mẫu
 INSERT INTO order_details (price, quantity, order_id, prod_id) VALUES 
 (350000, 1, 1, 2),
 (180000, 1, 1, 3),
-(350000, 1, 2, 2);
+(350000, 1, 2, 2),
+(220000, 1, 3, 5);
 GO
 
 PRINT N'Khởi tạo cơ sở dữ liệu Shopee Clone (Java 5) thành công!';

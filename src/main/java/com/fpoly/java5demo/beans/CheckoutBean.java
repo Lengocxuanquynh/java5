@@ -23,4 +23,6 @@ public class CheckoutBean {
 	private String note;
 
 	private String paymentMethod = "COD"; // COD, ShopeePay, BankTransfer
+
+	private Integer expectedTotal; // Tổng tiền hiển thị trên giao diện người dùng
 }

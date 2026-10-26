@@ -102,6 +102,18 @@
           </table>
         </div>
 
+        <!-- Cancel Reason Alert if status == 6 (Đã hủy) -->
+        <div th:if="${order.status == 6}" class="alert alert-danger d-flex align-items-start gap-3 p-3 mb-4 rounded border-0 bg-danger-subtle text-danger shadow-sm">
+          <i class="bi bi-x-circle-fill fs-4 mt-1"></i>
+          <div>
+            <h6 class="fw-bold mb-1">Đơn hàng này đã bị hủy</h6>
+            <div class="small">
+              <strong>Lý do hủy:</strong>
+              <span class="fst-italic text-dark fw-semibold" th:text="${order.cancelReason != null && !order.cancelReason.isEmpty() ? order.cancelReason : 'Không có lý do cụ thể'}"></span>
+            </div>
+          </div>
+        </div>
+
         <!-- Total Breakdown -->
         <div class="row justify-content-end">
           <div class="col-md-5">
@@ -125,11 +137,10 @@
         <!-- Action buttons -->
         <div th:if="${order.status == 1 || order.status == 4}"
           class="mt-4 pt-3 border-top text-end d-flex justify-content-end gap-2">
-          <!-- Cancel button if status == 1 (Chờ xác nhận) -->
-          <form th:if="${order.status == 1}" th:action="@{'/user/order/cancel/' + ${order.id}}" method="post"
-            onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn hàng này?');" class="d-inline">
-            <button type="submit" class="btn btn-outline-danger">Hủy Đơn Hàng</button>
-          </form>
+          <!-- Cancel button if status == 1 (Chờ xác nhận) -> Mở modal -->
+          <button th:if="${order.status == 1}" type="button" class="btn btn-outline-danger" onclick="openCancelModal()">
+            Hủy Đơn Hàng
+          </button>
 
           <!-- Confirm Received button CHỈ khi status == 4 (Đã giao hàng) theo quy tắc của thầy -->
           <form th:if="${order.status == 4}" th:action="@{'/user/order/received/' + ${order.id}}" method="post"
@@ -144,10 +155,44 @@
     </div>
   </main>
 
+  <!-- Modal Nhập Lý Do Hủy Đơn Hàng (User) -->
+  <div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form th:action="@{'/user/order/cancel/' + ${order.id}}" method="post" novalidate>
+          <div class="modal-header border-bottom">
+            <h6 class="modal-title fw-bold text-danger">
+              <i class="bi bi-x-circle me-1"></i>Xác Nhận Hủy Đơn Hàng #<span th:text="${order.id}"></span>
+            </h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body py-3">
+            <p class="small text-muted mb-3">Vui lòng cung cấp lý do hủy để PolyShop có thể hỗ trợ và cải thiện dịch vụ:</p>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Lý do hủy đơn</label>
+              <input type="text" name="reason" class="form-control"
+                     placeholder="Nhập lý do bạn muốn hủy đơn (tùy chọn)...">
+            </div>
+          </div>
+          <div class="modal-footer border-top bg-light">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+            <button type="submit" class="btn btn-danger btn-sm fw-semibold">Xác Nhận Hủy Đơn</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer Fragment -->
   <div th:replace="~{fragments/footer :: footer}"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function openCancelModal() {
+      const modal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
+      modal.show();
+    }
+  </script>
 </body>
 
 </html>

@@ -74,7 +74,7 @@ public class UserServices {
 			if (!user.isStatus()) {
 				return null; // Tài khoản bị khóa
 			}
-			// Lưu Cookie thuần túy theo chuẩn thầy (không lưu vào Session)
+			// Lưu Cookie (không lưu vào Session)
 			if (response != null) {
 				Utils.setCookie(Utils.COOKIE_KEY_USER_ID, String.valueOf(user.getId()), response);
 				Utils.setCookie(Utils.COOKIE_KEY_ROLE, String.valueOf(user.getRole()), response);

@@ -370,3 +370,32 @@ body {
 .polyshop-header .dropdown-item.text-muted {
   color: #6c757d !important;
 }
+
+/* [Vinh] Tinh chỉnh màu Placeholder rõ nét, dễ đọc nhưng in nghiêng để phân biệt với chữ đã gõ */
+::placeholder {
+  color: #6c757d !important;
+  opacity: 1 !important;
+  font-style: italic !important;
+  font-weight: 400 !important;
+}
+
+.form-control::placeholder {
+  color: #6c757d !important;
+  opacity: 1 !important;
+  font-style: italic !important;
+  font-weight: 400 !important;
+}
+
+input::placeholder {
+  color: #6c757d !important;
+  opacity: 1 !important;
+  font-style: italic !important;
+  font-weight: 400 !important;
+}
+
+textarea::placeholder {
+  color: #6c757d !important;
+  opacity: 1 !important;
+  font-style: italic !important;
+  font-weight: 400 !important;
+}

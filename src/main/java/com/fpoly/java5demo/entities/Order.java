@@ -58,6 +58,9 @@ public class Order {
 	@Column(name = "status", nullable = false)
 	private int status = 1; // 1: Chờ xác nhận, 2: Đã xác nhận, 3: Đang giao, 4: Đã giao, 5: Đã nhận, 6: Hủy
 
+	@Column(name = "cancel_reason", columnDefinition = "NVARCHAR(255)")
+	private String cancelReason;
+
 	@Column(name = "updated_at")
 	private Timestamp updatedAt;
 

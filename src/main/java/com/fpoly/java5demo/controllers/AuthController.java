@@ -41,7 +41,7 @@ public class AuthController {
 			return "login";
 		}
 
-		// Đăng nhập Cookie thuần túy theo chuẩn thầy (không lưu Session)
+		// Đăng nhập bằng Cookie (không lưu Session)
 		User user = userServices.login(bean.getUsername(), bean.getPassword(), response);
 		if (user == null) {
 			model.addAttribute("errorMessage", "Tên đăng nhập hoặc mật khẩu không chính xác, hoặc tài khoản đã bị khóa!");
