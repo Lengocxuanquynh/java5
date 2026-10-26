@@ -63,12 +63,24 @@ public class CartDetailServices {
 	}
 
 	public boolean addToCart(int userId, int prodId, int count) {
-		if (userId <= 0 || count <= 0) {
-			return false;
+		if (userId <= 0) {
+			throw new RuntimeException("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
 		}
+		if (count <= 0) {
+			throw new RuntimeException("Số lượng sản phẩm thêm vào giỏ không hợp lệ!");
+		}
+
+		Optional<User> userOpt = userJPA.findById(userId);
+		if (!userOpt.isPresent()) {
+			throw new RuntimeException("Tài khoản người dùng không tồn tại!");
+		}
+
 		Product product = productServices.findById(prodId);
-		if (product == null || !product.isStatus()) {
-			return false;
+		if (product == null) {
+			throw new RuntimeException("Sản phẩm không tồn tại!");
+		}
+		if (!product.isStatus()) {
+			throw new RuntimeException("Sản phẩm hiện đang tạm khóa hoặc không khả dụng!");
 		}
 
 		Optional<CartDetail> opt = cartDetailJPA.findByUserIdAndProductId(userId, prodId);
@@ -90,14 +102,11 @@ public class CartDetailServices {
 				qty = product.getQuantity();
 			}
 			if (qty > 0) {
-				Optional<User> userOpt = userJPA.findById(userId);
-				if (userOpt.isPresent()) {
-					CartDetail cd = new CartDetail();
-					cd.setUser(userOpt.get());
-					cd.setProduct(product);
-					cd.setQuantity(qty);
-					cartDetailJPA.save(cd);
-				}
+				CartDetail cd = new CartDetail();
+				cd.setUser(userOpt.get());
+				cd.setProduct(product);
+				cd.setQuantity(qty);
+				cartDetailJPA.save(cd);
 			}
 		}
 		return true;
@@ -106,72 +115,82 @@ public class CartDetailServices {
 	public boolean addToCart(int prodId, int count) {
 		int userId = getLoggedInUserId();
 		if (userId <= 0) {
-			return false;
+			throw new RuntimeException("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
 		}
 		return addToCart(userId, prodId, count);
 	}
 
 	public boolean updateQuantity(int userId, int prodId, int quantity) {
 		if (userId <= 0) {
-			return false;
+			throw new RuntimeException("Vui lòng đăng nhập để cập nhật giỏ hàng!");
 		}
+
 		Product product = productServices.findById(prodId);
 		if (product == null) {
-			return false;
+			throw new RuntimeException("Sản phẩm không tồn tại!");
 		}
 
 		Optional<CartDetail> opt = cartDetailJPA.findByUserIdAndProductId(userId, prodId);
-		if (opt.isPresent()) {
-			CartDetail cd = opt.get();
-			if (quantity <= 0) {
-				cartDetailJPA.delete(cd);
-			} else {
-				if (quantity > product.getQuantity()) {
-					quantity = product.getQuantity();
-				}
-				cd.setQuantity(quantity);
-				cartDetailJPA.save(cd);
-			}
-			return true;
+		if (!opt.isPresent()) {
+			throw new RuntimeException("Không tìm thấy sản phẩm trong giỏ hàng!");
 		}
-		return false;
+
+		CartDetail cd = opt.get();
+		if (quantity <= 0) {
+			cartDetailJPA.delete(cd);
+		} else {
+			if (quantity > product.getQuantity()) {
+				quantity = product.getQuantity();
+			}
+			cd.setQuantity(quantity);
+			cartDetailJPA.save(cd);
+		}
+		return true;
 	}
 
 	public boolean updateQuantity(int prodId, int quantity) {
 		int userId = getLoggedInUserId();
 		if (userId <= 0) {
-			return false;
+			throw new RuntimeException("Vui lòng đăng nhập để cập nhật giỏ hàng!");
 		}
 		return updateQuantity(userId, prodId, quantity);
 	}
 
 	public boolean removeCart(int userId, int prodId) {
 		if (userId <= 0) {
-			return false;
+			throw new RuntimeException("Vui lòng đăng nhập!");
 		}
-		cartDetailJPA.deleteByUserIdAndProductId(userId, prodId);
+
+		Optional<CartDetail> opt = cartDetailJPA.findByUserIdAndProductId(userId, prodId);
+		if (!opt.isPresent()) {
+			throw new RuntimeException("Không tìm thấy sản phẩm trong giỏ hàng để xóa!");
+		}
+
+		cartDetailJPA.delete(opt.get());
 		return true;
 	}
 
 	public boolean removeCart(int prodId) {
 		int userId = getLoggedInUserId();
 		if (userId <= 0) {
-			return false;
+			throw new RuntimeException("Vui lòng đăng nhập!");
 		}
 		return removeCart(userId, prodId);
 	}
 
 	public void clearCart(int userId) {
-		if (userId > 0) {
-			cartDetailJPA.deleteByUserId(userId);
+		if (userId <= 0) {
+			throw new RuntimeException("Vui lòng đăng nhập!");
 		}
+		cartDetailJPA.deleteByUserId(userId);
 	}
 
 	public void clearCart() {
 		int userId = getLoggedInUserId();
-		if (userId > 0) {
-			clearCart(userId);
+		if (userId <= 0) {
+			throw new RuntimeException("Vui lòng đăng nhập!");
 		}
+		clearCart(userId);
 	}
 
 	public void removeItemsFromCart(int userId, List<Integer> prodIds) {
