@@ -21,17 +21,17 @@ public class UserServices {
 	@Autowired
 	private UserJPA userJPA;
 
-	public String register(RegisterBean bean) {
+	public void register(RegisterBean bean) {
 		if (userJPA.countByUsername(bean.getUsername()) > 0) {
-			return "Tên tài khoản đã tồn tại!";
+			throw new RuntimeException("Tên tài khoản đã tồn tại!");
 		}
 		if (userJPA.countByEmail(bean.getEmail()) > 0) {
-			return "Email đã được sử dụng!";
+			throw new RuntimeException("Email đã được sử dụng!");
 		}
 		// [Vinh] Kiểm tra trùng số điện thoại - phục vụ luồng Order
 		if (bean.getPhone() != null && !bean.getPhone().trim().isEmpty()
 				&& userJPA.countByPhone(bean.getPhone().trim()) > 0) {
-			return "Số điện thoại đã được sử dụng!";
+			throw new RuntimeException("Số điện thoại đã được sử dụng!");
 		}
 
 		User user = new User();
@@ -44,45 +44,45 @@ public class UserServices {
 		user.setStatus(true);
 
 		userJPA.save(user);
-		return null;
 	}
 
-	public String resetPassword(ForgotPasswordBean bean) {
+	public void resetPassword(ForgotPasswordBean bean) {
 		Optional<User> optionalUser = userJPA.findByUsername(bean.getUsername().trim());
-		if (optionalUser.isEmpty()) {
-			return "Tên đăng nhập không tồn tại trong hệ thống!";
+		if (!optionalUser.isPresent()) {
+			throw new RuntimeException("Tên đăng nhập không tồn tại trong hệ thống!");
 		}
 
 		User user = optionalUser.get();
-		if (!user.getEmail().equalsIgnoreCase(bean.getEmail().trim())) {
-			return "Email không khớp với tài khoản đã đăng ký!";
+		if (user.getEmail() == null || !user.getEmail().equalsIgnoreCase(bean.getEmail().trim())) {
+			throw new RuntimeException("Email không khớp với tài khoản đã đăng ký!");
 		}
 
 		if (!bean.getNewPassword().equals(bean.getConfirmPassword())) {
-			return "Xác nhận mật khẩu mới không trùng khớp!";
+			throw new RuntimeException("Xác nhận mật khẩu mới không trùng khớp!");
 		}
 
 		user.setPassword(bean.getNewPassword());
 		userJPA.save(user);
-		return null;
 	}
 
 	public User login(String username, String password, HttpServletResponse response) {
 		Optional<User> optionalUser = userJPA.findByUsernameAndPassword(username, password);
-		if (optionalUser.isPresent()) {
-			User user = optionalUser.get();
-			if (!user.isStatus()) {
-				return null; // Tài khoản bị khóa
-			}
-			// Lưu Cookie thuần túy theo chuẩn thầy (không lưu vào Session)
-			if (response != null) {
-				Utils.setCookie(Utils.COOKIE_KEY_USER_ID, String.valueOf(user.getId()), response);
-				Utils.setCookie(Utils.COOKIE_KEY_ROLE, String.valueOf(user.getRole()), response);
-				Utils.setCookie("username", user.getUsername(), response);
-			}
-			return user;
+		if (!optionalUser.isPresent()) {
+			throw new RuntimeException("Tên đăng nhập hoặc mật khẩu không chính xác!");
 		}
-		return null;
+
+		User user = optionalUser.get();
+		if (!user.isStatus()) {
+			throw new RuntimeException("Tài khoản đã bị khóa!");
+		}
+
+		// Lưu Cookie thuần túy theo chuẩn thầy (không lưu vào Session)
+		if (response != null) {
+			Utils.setCookie(Utils.COOKIE_KEY_USER_ID, String.valueOf(user.getId()), response);
+			Utils.setCookie(Utils.COOKIE_KEY_ROLE, String.valueOf(user.getRole()), response);
+			Utils.setCookie("username", user.getUsername(), response);
+		}
+		return user;
 	}
 
 	public void logout(HttpServletRequest request, HttpServletResponse response) {

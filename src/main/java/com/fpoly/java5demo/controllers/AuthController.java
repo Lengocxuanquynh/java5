@@ -41,24 +41,26 @@ public class AuthController {
 			return "login";
 		}
 
-		// Đăng nhập Cookie thuần túy theo chuẩn thầy (không lưu Session)
-		User user = userServices.login(bean.getUsername(), bean.getPassword(), response);
-		if (user == null) {
-			model.addAttribute("errorMessage", "Tên đăng nhập hoặc mật khẩu không chính xác, hoặc tài khoản đã bị khóa!");
+		try {
+			// Đăng nhập Cookie thuần túy theo chuẩn thầy (không lưu Session)
+			User user = userServices.login(bean.getUsername(), bean.getPassword(), response);
+
+			if (redirect != null && !redirect.trim().isEmpty() && redirect.startsWith("/")
+					&& !redirect.startsWith("//") && !redirect.contains("/login")) {
+				return "redirect:" + redirect;
+			}
+
+			if (user.getRole() == 1) {
+				return "redirect:/admin";
+			}
+
+			return "redirect:/";
+		} catch (Exception e) {
+			e.printStackTrace();
+			model.addAttribute("errorMessage", e.getMessage());
 			model.addAttribute("redirect", redirect);
 			return "login";
 		}
-
-		if (redirect != null && !redirect.trim().isEmpty() && redirect.startsWith("/")
-				&& !redirect.startsWith("//") && !redirect.contains("/login")) {
-			return "redirect:" + redirect;
-		}
-
-		if (user.getRole() == 1) {
-			return "redirect:/admin";
-		}
-
-		return "redirect:/";
 	}
 
 	@GetMapping("/register")
@@ -73,15 +75,16 @@ public class AuthController {
 			return "register";
 		}
 
-		String error = userServices.register(bean);
-		if (error != null) {
-			model.addAttribute("errorMessage", error);
+		try {
+			userServices.register(bean);
+			model.addAttribute("successMessage", "Đăng ký tài khoản thành công! Vui lòng đăng nhập.");
+			model.addAttribute("loginBean", new LoginBean());
+			return "login";
+		} catch (Exception e) {
+			e.printStackTrace();
+			model.addAttribute("errorMessage", e.getMessage());
 			return "register";
 		}
-
-		model.addAttribute("successMessage", "Đăng ký tài khoản thành công! Vui lòng đăng nhập.");
-		model.addAttribute("loginBean", new LoginBean());
-		return "login";
 	}
 
 	@GetMapping("/forgot-password")
@@ -96,20 +99,25 @@ public class AuthController {
 			return "forgot-password";
 		}
 
-		String error = userServices.resetPassword(bean);
-		if (error != null) {
-			model.addAttribute("errorMessage", error);
+		try {
+			userServices.resetPassword(bean);
+			model.addAttribute("successMessage", "Đặt lại mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới.");
+			model.addAttribute("loginBean", new LoginBean());
+			return "login";
+		} catch (Exception e) {
+			e.printStackTrace();
+			model.addAttribute("errorMessage", e.getMessage());
 			return "forgot-password";
 		}
-
-		model.addAttribute("successMessage", "Đặt lại mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới.");
-		model.addAttribute("loginBean", new LoginBean());
-		return "login";
 	}
 
 	@GetMapping("/logout")
 	public String logout(HttpServletRequest request, HttpServletResponse response) {
-		userServices.logout(request, response);
+		try {
+			userServices.logout(request, response);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		return "redirect:/";
 	}
 }
