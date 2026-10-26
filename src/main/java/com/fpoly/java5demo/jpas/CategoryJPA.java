@@ -1,5 +1,6 @@
 package com.fpoly.java5demo.jpas;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,7 +16,6 @@ public interface CategoryJPA extends JpaRepository<Category, Integer> {
 	@Query(value = "SELECT * FROM categories WHERE LOWER(TRIM(name)) = LOWER(TRIM(?1)) AND id != ?2", nativeQuery = true)
 	Optional<Category> checkNameExist(String name, int id);
 
-	Optional<Category> findByNameIgnoreCase(String name);
-
-	Optional<Category> findByNameIgnoreCaseAndIdNot(String name, int id);
+	@Query(value = "SELECT * FROM categories", nativeQuery = true)
+	List<Category> findAllCategories();
 }

@@ -27,7 +27,7 @@ public class ProductServices {
 
 	public List<Product> getList() {
 		try {
-			return productJPA.findAll();
+			return productJPA.findAllProducts();
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ArrayList<>();
@@ -57,7 +57,7 @@ public class ProductServices {
 			if (keyword == null || keyword.trim().isEmpty()) {
 				return getAvailableProducts();
 			}
-			return productJPA.findByNameContainingIgnoreCaseAndStatusTrue(keyword.trim());
+			return productJPA.findByNameContainingAndStatusTrue(keyword.trim());
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ArrayList<>();
@@ -158,12 +158,18 @@ public class ProductServices {
 					product.setStatus(false);
 					productJPA.save(product);
 				} else {
-					if (product.getImages() != null) {
-						for (Image image : product.getImages()) {
-							imageJPA.delete(image);
+					try {
+						if (product.getImages() != null) {
+							for (Image image : product.getImages()) {
+								imageJPA.delete(image);
+							}
 						}
+						productJPA.delete(product);
+					} catch (Exception ex) {
+						// Nếu có ràng buộc dữ liệu đơn hàng thì tự động chuyển sang ẩn sản phẩm
+						product.setStatus(false);
+						productJPA.save(product);
 					}
-					productJPA.delete(product);
 				}
 				return null;
 			}
@@ -175,6 +181,10 @@ public class ProductServices {
 	}
 
 	public Product findById(int id) {
-		return productJPA.findById(id).orElse(null);
+		Optional<Product> prodOptional = productJPA.findById(id);
+		if (!prodOptional.isPresent()) {
+			return null;
+		}
+		return prodOptional.get();
 	}
 }
