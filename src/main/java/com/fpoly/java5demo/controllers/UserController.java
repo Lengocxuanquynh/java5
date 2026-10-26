@@ -7,8 +7,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.fpoly.java5demo.beans.ChangePasswordBean;
 import com.fpoly.java5demo.beans.ProfileBean;
@@ -20,7 +18,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @Controller
-@RequestMapping("/user")
 public class UserController {
 
 	@Autowired
@@ -29,7 +26,7 @@ public class UserController {
 	@Autowired
 	private CartDetailServices cartDetailServices;
 
-	@GetMapping("/profile")
+	@GetMapping("/user/profile")
 	public String profile(Model model, HttpServletRequest request) {
 		User currentUser = userServices.getLoggedInUser(request);
 		if (currentUser == null) {
@@ -58,10 +55,9 @@ public class UserController {
 		return "user/profile";
 	}
 
-	@PostMapping({ "/profile", "/profile/update" })
+	@PostMapping({ "/user/profile", "/user/profile/update" })
 	public String updateProfile(@Valid @ModelAttribute("profileBean") ProfileBean profileBean,
-			Errors errors, Model model, HttpServletRequest request,
-			RedirectAttributes redirectAttributes) {
+			Errors errors, Model model, HttpServletRequest request) {
 		User currentUser = userServices.getLoggedInUser(request);
 		if (currentUser == null) {
 			return "redirect:/login?redirect=/user/profile";
@@ -109,15 +105,12 @@ public class UserController {
 		currentUser.setAddress(profileBean.getAddress()); // [Vinh] Lưu địa chỉ vào DB phục vụ luồng Order
 		userServices.save(currentUser);
 
-		redirectAttributes.addFlashAttribute("successProfileMessage", "Cập nhật hồ sơ tài khoản thành công!");
-		redirectAttributes.addFlashAttribute("successMessage", "Cập nhật hồ sơ tài khoản thành công!");
 		return "redirect:/user/profile";
 	}
 
-	@PostMapping({ "/change-password", "/profile/change-password" })
+	@PostMapping({ "/user/change-password", "/user/profile/change-password" })
 	public String changePassword(@Valid @ModelAttribute("passwordBean") ChangePasswordBean bean,
-			Errors errors, Model model, HttpServletRequest request,
-			RedirectAttributes redirectAttributes) {
+			Errors errors, Model model, HttpServletRequest request) {
 		User currentUser = userServices.getLoggedInUser(request);
 		if (currentUser == null) {
 			return "redirect:/login?redirect=/user/profile";
@@ -183,8 +176,6 @@ public class UserController {
 		currentUser.setPassword(bean.getNewPassword());
 		userServices.save(currentUser);
 
-		redirectAttributes.addFlashAttribute("successPasswordMessage", "Đổi mật khẩu thành công!");
-		redirectAttributes.addFlashAttribute("successMessage", "Đổi mật khẩu thành công!");
 		return "redirect:/user/profile";
 	}
 }

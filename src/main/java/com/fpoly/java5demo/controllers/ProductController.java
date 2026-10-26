@@ -11,9 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.fpoly.java5demo.beans.CategoryFormBean;
 import com.fpoly.java5demo.beans.ProductFormBean;
@@ -25,7 +23,6 @@ import com.fpoly.java5demo.services.ProductServices;
 import jakarta.validation.Valid;
 
 @Controller
-@RequestMapping("/admin")
 public class ProductController {
 
 	@Autowired
@@ -57,7 +54,7 @@ public class ProductController {
 		model.addAttribute("users", userServices.getAllUsers());
 	}
 
-	@GetMapping({ "", "/dashboard" })
+	@GetMapping({ "/admin", "/admin/dashboard" })
 	public String dashboard(Model model,
 			@RequestParam(value = "tab", required = false) String tab,
 			@RequestParam(value = "editProductId", required = false) Integer editProductId,
@@ -100,24 +97,24 @@ public class ProductController {
 		return "admin/dashboard";
 	}
 
-	@GetMapping("/products")
+	@GetMapping("/admin/products")
 	public String listProducts() {
 		return "redirect:/admin?tab=products";
 	}
 
-	@GetMapping("/product-form")
+	@GetMapping("/admin/product-form")
 	public String productForm() {
 		return "redirect:/admin?tab=products";
 	}
 
-	@GetMapping("/product-form/{id}")
+	@GetMapping("/admin/product-form/{id}")
 	public String productEdit(@PathVariable("id") int id) {
 		return "redirect:/admin?tab=products&editProductId=" + id;
 	}
 
-	@PostMapping("/product-form")
+	@PostMapping("/admin/product-form")
 	public String productSave(@Valid @ModelAttribute("bean") ProductFormBean bean, Errors errors,
-			Model model, RedirectAttributes redirectAttributes) {
+			Model model) {
 		if (errors.hasErrors()) {
 			populateDashboardData(model);
 			model.addAttribute("productBean", bean);
@@ -170,18 +167,12 @@ public class ProductController {
 			return "admin/dashboard";
 		}
 
-		redirectAttributes.addFlashAttribute("successMessage", isUpdate ? "Cập nhật sản phẩm thành công!" : "Thêm mới sản phẩm thành công!");
 		return "redirect:/admin?tab=products";
 	}
 
-	@GetMapping("/product/delete/{id}")
-	public String productDelete(@PathVariable("id") int id, RedirectAttributes redirectAttributes) {
-		String error = productServices.remove(id);
-		if (error == null) {
-			redirectAttributes.addFlashAttribute("successMessage", "Xóa sản phẩm thành công!");
-		} else {
-			redirectAttributes.addFlashAttribute("errorMessage", error);
-		}
+	@PostMapping({ "/admin/product-delete", "/admin/product/delete" })
+	public String productDelete(@RequestParam("id") int id) {
+		productServices.remove(id);
 		return "redirect:/admin?tab=products";
 	}
 
