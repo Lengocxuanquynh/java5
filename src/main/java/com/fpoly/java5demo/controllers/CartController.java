@@ -63,9 +63,15 @@ public class CartController {
 			return "redirect:/product/" + productId;
 		}
 
-		cartDetailServices.addToCart(currentUser.getId(), productId, quantity);
-		if (buyNow) {
-			return "redirect:/checkout?items=" + productId;
+		try {
+			cartDetailServices.addToCart(currentUser.getId(), productId, quantity);
+			if (buyNow) {
+				return "redirect:/checkout?items=" + productId;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+			return "redirect:/product/" + productId;
 		}
 		return "redirect:/cart";
 	}
@@ -84,36 +90,65 @@ public class CartController {
 			return "redirect:/product/" + productId;
 		}
 
-		cartDetailServices.addToCart(currentUser.getId(), productId, 1);
+		try {
+			cartDetailServices.addToCart(currentUser.getId(), productId, 1);
+		} catch (Exception e) {
+			e.printStackTrace();
+			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+		}
 		return "redirect:/cart";
 	}
 
 	@PostMapping("/update")
 	public String updateQuantity(@RequestParam("productId") int productId,
 			@RequestParam("quantity") int quantity,
-			HttpServletRequest request) {
+			HttpServletRequest request,
+			RedirectAttributes redirectAttributes) {
 		User currentUser = userServices.getLoggedInUser(request);
-		if (currentUser != null) {
+		if (currentUser == null) {
+			return "redirect:/login?redirect=/cart";
+		}
+
+		try {
 			cartDetailServices.updateQuantity(currentUser.getId(), productId, quantity);
+		} catch (Exception e) {
+			e.printStackTrace();
+			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
 		}
 		return "redirect:/cart";
 	}
 
 	@GetMapping("/remove/{id}")
 	public String removeFromCart(@PathVariable("id") int productId,
-			HttpServletRequest request) {
+			HttpServletRequest request,
+			RedirectAttributes redirectAttributes) {
 		User currentUser = userServices.getLoggedInUser(request);
-		if (currentUser != null) {
+		if (currentUser == null) {
+			return "redirect:/login?redirect=/cart";
+		}
+
+		try {
 			cartDetailServices.removeCart(currentUser.getId(), productId);
+		} catch (Exception e) {
+			e.printStackTrace();
+			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
 		}
 		return "redirect:/cart";
 	}
 
 	@GetMapping("/clear")
-	public String clearCart(HttpServletRequest request) {
+	public String clearCart(HttpServletRequest request,
+			RedirectAttributes redirectAttributes) {
 		User currentUser = userServices.getLoggedInUser(request);
-		if (currentUser != null) {
+		if (currentUser == null) {
+			return "redirect:/login?redirect=/cart";
+		}
+
+		try {
 			cartDetailServices.clearCart(currentUser.getId());
+		} catch (Exception e) {
+			e.printStackTrace();
+			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
 		}
 		return "redirect:/cart";
 	}

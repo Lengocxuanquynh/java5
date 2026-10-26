@@ -44,30 +44,30 @@ public class CategoryController {
 			return "redirect:/admin?tab=categories";
 		}
 
-		Category category = bean.convertBeanToEntity();
-		String error;
-		if (bean.getId() != null && bean.getId().isPresent()) {
-			error = categoryServices.updateCategory(category);
-		} else {
-			error = categoryServices.addCategory(category);
+		try {
+			Category category = bean.convertBeanToEntity();
+			if (bean.getId() != null && bean.getId().isPresent()) {
+				categoryServices.updateCategory(category);
+			} else {
+				categoryServices.addCategory(category);
+			}
+			redirectAttributes.addFlashAttribute("successMessage", "Lưu danh mục thành công!");
+		} catch (Exception e) {
+			e.printStackTrace();
+			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
 		}
 
-		if (error != null) {
-			redirectAttributes.addFlashAttribute("errorMessage", error);
-			return "redirect:/admin?tab=categories";
-		}
-
-		redirectAttributes.addFlashAttribute("successMessage", "Lưu danh mục thành công!");
 		return "redirect:/admin?tab=categories";
 	}
 
 	@GetMapping("/category/delete/{id}")
 	public String deleteCategory(@PathVariable("id") int id, RedirectAttributes redirectAttributes) {
-		boolean ok = categoryServices.deleteCategory(id);
-		if (ok) {
+		try {
+			categoryServices.deleteCategory(id);
 			redirectAttributes.addFlashAttribute("successMessage", "Xóa danh mục thành công!");
-		} else {
-			redirectAttributes.addFlashAttribute("errorMessage", "Không thể xóa danh mục đã chứa sản phẩm!");
+		} catch (Exception e) {
+			e.printStackTrace();
+			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
 		}
 		return "redirect:/admin?tab=categories";
 	}

@@ -15,77 +15,67 @@ import com.fpoly.java5demo.jpas.CategoryJPA;
 public class CategoryServices {
 
 	@Autowired
-	CategoryJPA categoryJPA;
+	private CategoryJPA categoryJPA;
 
 	public CategoryServices() {
 	}
 
-	public String addCategory(Category category) {
-//		Kiểm tra tên danh mục đã tồn tại chưa? 
-		try {
-			if (category.getName() == null || category.getName().trim().isEmpty()) {
-				return "Tên danh mục không được để trống";
-			}
-			category.setName(category.getName().trim());
-			Optional<Category> catOptional = categoryJPA.checkNameExist(category.getName());
-			if (catOptional.isPresent()) {
-				return "Trùng tên";
-			}
-			categoryJPA.save(category);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return "Lỗi";
+	public Category addCategory(Category category) {
+		if (category.getName() == null || category.getName().trim().isEmpty()) {
+			throw new RuntimeException("Tên danh mục không được để trống!");
 		}
-		return null;
+		category.setName(category.getName().trim());
+
+		Optional<Category> catOptional = categoryJPA.checkNameExist(category.getName());
+		if (catOptional.isPresent()) {
+			throw new RuntimeException("Tên danh mục đã tồn tại!");
+		}
+
+		return categoryJPA.save(category);
 	}
 
-	public String updateCategory(Category category) {
-		try {
-			if (category.getName() == null || category.getName().trim().isEmpty()) {
-				return "Tên danh mục không được để trống";
-			}
-			category.setName(category.getName().trim());
-			Optional<Category> catOptional = categoryJPA.checkNameExist(category.getName(), category.getId());
-			if (catOptional.isPresent()) {
-				return "Trùng tên";
-			}
-			categoryJPA.save(category);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return "Lỗi";
+	public Category updateCategory(Category category) {
+		if (category.getName() == null || category.getName().trim().isEmpty()) {
+			throw new RuntimeException("Tên danh mục không được để trống!");
 		}
-		return null;
+		category.setName(category.getName().trim());
+
+		Optional<Category> existingOpt = categoryJPA.findById(category.getId());
+		if (!existingOpt.isPresent()) {
+			throw new RuntimeException("Danh mục không tồn tại trên hệ thống!");
+		}
+
+		Optional<Category> catOptional = categoryJPA.checkNameExist(category.getName(), category.getId());
+		if (catOptional.isPresent()) {
+			throw new RuntimeException("Tên danh mục đã tồn tại!");
+		}
+
+		return categoryJPA.save(category);
 	}
 
 	public List<Category> getList() {
-		List<Category> categories = new ArrayList<Category>();
-		try {
-			categories = categoryJPA.findAllCategories();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return categories;
+		return categoryJPA.findAllCategories();
 	}
 
 	public Category getById(int id) {
-		try {
-			Optional<Category> catOptional = categoryJPA.findById(id);
-
-			return catOptional.isPresent() ? catOptional.get() : null;
-		} catch (Exception e) {
-			e.printStackTrace();
+		Optional<Category> catOptional = categoryJPA.findById(id);
+		if (!catOptional.isPresent()) {
+			throw new RuntimeException("Không tìm thấy danh mục có ID: " + id);
 		}
-
-		return null;
+		return catOptional.get();
 	}
 
-	public boolean deleteCategory(int id) {
-		try {
-			categoryJPA.deleteById(id);
-			return true;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
+	public void deleteCategory(int id) {
+		Optional<Category> catOptional = categoryJPA.findById(id);
+		if (!catOptional.isPresent()) {
+			throw new RuntimeException("Danh mục không tồn tại để xóa!");
 		}
+
+		Category category = catOptional.get();
+		if (category.getProducts() != null && !category.getProducts().isEmpty()) {
+			throw new RuntimeException("Không thể xóa danh mục đã chứa sản phẩm!");
+		}
+
+		categoryJPA.deleteById(id);
 	}
 }
