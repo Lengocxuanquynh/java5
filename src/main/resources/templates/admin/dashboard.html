@@ -427,10 +427,10 @@
                       <a th:href="@{'/admin?tab=products&editProductId=' + ${p.id}}" class="btn btn-sm btn-outline-primary me-1" title="Sửa">
                         <i class="bi bi-pencil-square"></i>
                       </a>
-                      <a th:href="@{'/admin/product/delete/' + ${p.id}}" class="btn btn-sm btn-outline-danger" title="Xóa"
-                         onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?');">
-                        <i class="bi bi-trash"></i>
-                      </a>
+                      <form method="POST" th:action="@{/admin/product-delete}" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa sản phẩm này?');">
+                        <input type="hidden" th:value="${p.id}" name="id"/>
+                        <input type="submit" class="btn btn-sm btn-danger" value="Xoá"/>
+                      </form>
                     </td>
                   </tr>
                 </tbody>
@@ -820,24 +820,21 @@
                       </span>
                     </td>
                     <td class="text-end">
-                      <!-- Khóa / Mở khóa -->
-                      <a th:if="${u.role != 1 && u.status}" th:href="@{'/admin/user/toggle-status/' + ${u.id}}" 
-                         class="btn btn-sm btn-outline-warning me-1" title="Khóa tài khoản"
-                         onclick="return confirm('Bạn có chắc muốn KHÓA tài khoản này?');">
-                        <i class="bi bi-lock-fill me-1"></i>Khóa
-                      </a>
-                      <a th:if="${u.role != 1 && !u.status}" th:href="@{'/admin/user/toggle-status/' + ${u.id}}" 
-                         class="btn btn-sm btn-outline-success me-1" title="Mở khóa tài khoản"
-                         onclick="return confirm('Bạn có chắc muốn MỞ KHÓA tài khoản này?');">
-                        <i class="bi bi-unlock-fill me-1"></i>Mở
-                      </a>
-
-                      <!-- Xóa tài khoản -->
-                      <a th:if="${u.role != 1}" th:href="@{'/admin/user/delete/' + ${u.id}}" 
-                         class="btn btn-sm btn-outline-danger" title="Xóa tài khoản"
-                         onclick="return confirm('Bạn có chắc muốn xóa tài khoản này?');">
-                        <i class="bi bi-trash me-1"></i>Xóa
-                      </a>
+                      <!-- Khóa / Mở khóa tài khoản (Admin không thể xóa, chỉ khóa) -->
+                      <form th:if="${u.role != 1 && u.status}" method="POST" th:action="@{/admin/user-toggle-status}" class="d-inline"
+                            onsubmit="return confirm('Bạn có chắc muốn KHÓA tài khoản này?');">
+                        <input type="hidden" name="id" th:value="${u.id}"/>
+                        <button type="submit" class="btn btn-sm btn-outline-warning me-1" title="Khóa tài khoản">
+                          <i class="bi bi-lock-fill me-1"></i>Khóa
+                        </button>
+                      </form>
+                      <form th:if="${u.role != 1 && !u.status}" method="POST" th:action="@{/admin/user-toggle-status}" class="d-inline"
+                            onsubmit="return confirm('Bạn có chắc muốn MỞ KHÓA tài khoản này?');">
+                        <input type="hidden" name="id" th:value="${u.id}"/>
+                        <button type="submit" class="btn btn-sm btn-outline-success me-1" title="Mở khóa tài khoản">
+                          <i class="bi bi-unlock-fill me-1"></i>Mở
+                        </button>
+                      </form>
 
                       <!-- Tài khoản Admin mặc định -->
                       <span th:if="${u.role == 1}" class="badge bg-light text-muted border">

@@ -8,8 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.fpoly.java5demo.beans.UserFormBean;
 import com.fpoly.java5demo.entities.User;
@@ -19,25 +18,24 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @Controller
-@RequestMapping("/admin")
 public class AdminUserController {
 
 	@Autowired
 	private UserServices userServices;
 
-	@GetMapping({ "/users", "/user-form" })
+	@GetMapping({ "/admin/users", "/admin/user-form" })
 	public String userForm(Model model) {
 		return "redirect:/admin?tab=users";
 	}
 
-	@GetMapping("/user-form/{id}")
+	@GetMapping("/admin/user-form/{id}")
 	public String userEdit(@PathVariable("id") int id, Model model) {
 		return "redirect:/admin?tab=users";
 	}
 
-	@PostMapping("/user-form")
+	@PostMapping("/admin/user-form")
 	public String userSave(@Valid @ModelAttribute("bean") UserFormBean bean, Errors errors,
-			Model model, RedirectAttributes redirectAttributes) {
+			Model model) {
 		if (errors.hasErrors()) {
 			return "redirect:/admin?tab=users";
 		}
@@ -55,7 +53,6 @@ public class AdminUserController {
 		// [Vinh] Kiểm tra trùng SĐT khi thêm mới hoặc sửa - phục vụ luồng Order (ghi chú code đồng bộ)
 		User existingPhone = userServices.findByPhone(bean.getPhone());
 		if (existingPhone != null && (bean.getId() == null || existingPhone.getId() != bean.getId())) {
-			redirectAttributes.addFlashAttribute("errorMessage", "Số điện thoại '" + bean.getPhone() + "' đã được sử dụng bởi người dùng khác!");
 			return "redirect:/admin?tab=users";
 		}
 
@@ -72,64 +69,33 @@ public class AdminUserController {
 
 		userServices.save(user);
 
-		redirectAttributes.addFlashAttribute("successMessage", "Lưu thông tin người dùng thành công!");
 		return "redirect:/admin?tab=users";
 	}
 
-	@GetMapping("/user/delete/{id}")
-	public String userDelete(@PathVariable("id") int id, HttpServletRequest request,
-			RedirectAttributes redirectAttributes) {
+	@PostMapping({ "/admin/user-toggle-status", "/admin/user/toggle-status" })
+	public String userToggleStatus(@RequestParam("id") int id, HttpServletRequest request) {
 		User currentAdmin = userServices.getLoggedInUser(request);
 		if (currentAdmin != null && currentAdmin.getId() == id) {
-			redirectAttributes.addFlashAttribute("errorMessage", "Bạn không thể tự xóa tài khoản của chính mình!");
 			return "redirect:/admin?tab=users";
 		}
 
 		User targetUser = userServices.getUserInfoById(id);
 		if (targetUser == null) {
-			redirectAttributes.addFlashAttribute("errorMessage", "Tài khoản không tồn tại!");
 			return "redirect:/admin?tab=users";
 		}
 
 		if (targetUser.getRole() == 1) {
-			redirectAttributes.addFlashAttribute("errorMessage", "Không được phép xóa tài khoản Quản trị viên (Admin)!");
-			return "redirect:/admin?tab=users";
-		}
-
-		try {
-			userServices.deleteById(id);
-			redirectAttributes.addFlashAttribute("successMessage", "Xóa tài khoản người dùng thành công!");
-		} catch (Exception e) {
-			redirectAttributes.addFlashAttribute("errorMessage", "Không thể xóa người dùng này do có dữ liệu liên quan!");
-		}
-		return "redirect:/admin?tab=users";
-	}
-
-	@GetMapping("/user/toggle-status/{id}")
-	public String userToggleStatus(@PathVariable("id") int id, HttpServletRequest request,
-			RedirectAttributes redirectAttributes) {
-		User currentAdmin = userServices.getLoggedInUser(request);
-		if (currentAdmin != null && currentAdmin.getId() == id) {
-			redirectAttributes.addFlashAttribute("errorMessage", "Bạn không thể tự khóa tài khoản của chính mình!");
-			return "redirect:/admin?tab=users";
-		}
-
-		User targetUser = userServices.getUserInfoById(id);
-		if (targetUser == null) {
-			redirectAttributes.addFlashAttribute("errorMessage", "Tài khoản không tồn tại!");
-			return "redirect:/admin?tab=users";
-		}
-
-		if (targetUser.getRole() == 1) {
-			redirectAttributes.addFlashAttribute("errorMessage", "Không thể khóa tài khoản Quản trị viên (Admin)!");
 			return "redirect:/admin?tab=users";
 		}
 
 		targetUser.setStatus(!targetUser.isStatus());
 		userServices.save(targetUser);
 
-		redirectAttributes.addFlashAttribute("successMessage",
-				(targetUser.isStatus() ? "Mở khóa" : "Khóa") + " tài khoản " + targetUser.getUsername() + " thành công!");
 		return "redirect:/admin?tab=users";
+	}
+
+	@GetMapping({ "/admin/user/toggle-status/{id}", "/admin/user-toggle-status/{id}" })
+	public String userToggleStatusGet(@PathVariable("id") int id, HttpServletRequest request) {
+		return userToggleStatus(id, request);
 	}
 }
