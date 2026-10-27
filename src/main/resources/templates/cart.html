@@ -17,7 +17,11 @@
   <main class="main-content py-4">
     <div class="container">
 
-      <!-- Error Alert -->
+      <!-- Success & Error Alerts -->
+      <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
       <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMessage}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -75,8 +79,10 @@
                     <a th:href="@{'/product/' + ${item.product.id}}"
                       class="text-decoration-none text-dark fw-semibold small d-block mb-1"
                       th:text="${item.product.name}">Tên sản phẩm</a>
-                    <span class="badge bg-light text-muted border small" th:text="${item.product.category.name}">Danh
-                      mục</span>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge bg-light text-muted border small" th:text="${item.product.category.name}">Danh mục</span>
+                      <span class="small text-muted" th:text="'Kho: ' + ${item.product.quantity}">Kho: 0</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -91,12 +97,15 @@
               <div class="col-4 col-md-2">
                 <form th:action="@{/cart/update}" method="post" class="d-inline-flex justify-content-center">
                   <input type="hidden" name="productId" th:value="${item.product.id}">
-                  <div class="input-group input-group-sm" style="max-width: 110px;">
+                  <div class="input-group input-group-sm" style="max-width: 120px;">
                     <button class="btn btn-outline-secondary" type="submit" name="quantity"
                       th:value="${item.quantity - 1}">-</button>
-                    <input type="text" class="form-control text-center" th:value="${item.quantity}" readonly>
+                    <input type="number" class="form-control text-center px-1" name="quantity"
+                      th:value="${item.quantity}" min="1" th:max="${item.product.quantity}"
+                      onchange="this.form.submit()">
                     <button class="btn btn-outline-secondary" type="submit" name="quantity"
-                      th:value="${item.quantity + 1}">+</button>
+                      th:value="${item.quantity + 1}"
+                      th:disabled="${item.quantity >= item.product.quantity}">+</button>
                   </div>
                 </form>
               </div>
@@ -109,7 +118,8 @@
 
               <!-- Action Delete -->
               <div class="col-12 col-md-1 text-end text-md-center">
-                <a th:href="@{'/cart/remove/' + ${item.product.id}}" class="btn btn-sm btn-outline-danger" title="Xóa">
+                <a th:href="@{'/cart/remove/' + ${item.product.id}}" class="btn btn-sm btn-outline-danger" title="Xóa"
+                   onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?');">
                   <i class="bi bi-trash"></i>
                 </a>
               </div>

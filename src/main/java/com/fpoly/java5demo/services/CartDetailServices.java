@@ -143,6 +143,11 @@ public class CartDetailServices {
 		}
 
 		CartDetail cd = opt.get();
+		if (!product.isStatus() || product.getQuantity() <= 0) {
+			cartDetailJPA.delete(cd);
+			throw new RuntimeException("product_disabled");
+		}
+
 		if (quantity <= 0) {
 			cartDetailJPA.delete(cd);
 		} else {

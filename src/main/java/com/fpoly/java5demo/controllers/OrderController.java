@@ -70,7 +70,7 @@ public class OrderController {
 			// Lấy danh sách sản phẩm trong giỏ qua OrderServices
 			List<CartItemBean> cartItems = orderServices.getCheckoutCartItems(items);
 			if (cartItems.isEmpty()) {
-				return "redirect:/cart";
+				return "redirect:/cart?error=no_items_selected";
 			}
 
 			int totalAmount = orderServices.calculateTotalAmount(cartItems);
@@ -114,7 +114,7 @@ public class OrderController {
 
 			List<CartItemBean> cartItems = orderServices.getCheckoutCartItems(items);
 			if (cartItems.isEmpty()) {
-				return "redirect:/cart";
+				return "redirect:/cart?error=no_items_selected";
 			}
 
 			int totalAmount = orderServices.calculateTotalAmount(cartItems);
