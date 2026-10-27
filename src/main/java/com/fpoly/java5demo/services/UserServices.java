@@ -28,7 +28,7 @@ public class UserServices {
 		if (userJPA.countByEmail(bean.getEmail()) > 0) {
 			throw new RuntimeException("Email đã được sử dụng!");
 		}
-		// [Vinh] Kiểm tra trùng số điện thoại - phục vụ luồng Order
+		// Kiểm tra trùng số điện thoại - phục vụ luồng Order
 		if (bean.getPhone() != null && !bean.getPhone().trim().isEmpty()
 				&& userJPA.countByPhone(bean.getPhone().trim()) > 0) {
 			throw new RuntimeException("Số điện thoại đã được sử dụng!");
@@ -155,7 +155,7 @@ public class UserServices {
 		return userOptional.get();
 	}
 
-	// [Vinh] Tìm user theo SĐT - phục vụ kiểm tra trùng khi cập nhật profile / admin quản lý user
+	//  Tìm user theo SĐT - phục vụ kiểm tra trùng khi cập nhật profile / admin quản lý user
 	public User findByPhone(String phone) {
 		Optional<User> userOptional = userJPA.findByPhone(phone);
 		if (!userOptional.isPresent()) {

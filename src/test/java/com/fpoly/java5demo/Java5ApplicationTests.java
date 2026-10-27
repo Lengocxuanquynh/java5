@@ -116,25 +116,25 @@ class Java5ApplicationTests {
 		// 2. Thêm mới trùng tên -> phải chặn
 		com.fpoly.java5demo.entities.Category dupCat = new com.fpoly.java5demo.entities.Category();
 		dupCat.setName("  Điện Thoại & Phụ Kiện  ");
-		String addResult = categoryServices.addCategory(dupCat);
-		assertEquals("Trùng tên", addResult, "Không cho phép thêm danh mục trùng tên");
+		assertThrows(RuntimeException.class, () -> categoryServices.addCategory(dupCat),
+				"Không cho phép thêm danh mục trùng tên");
 
 		// 3. Thêm mới tên hợp lệ -> thành công
 		com.fpoly.java5demo.entities.Category newCat = new com.fpoly.java5demo.entities.Category();
 		newCat.setName("Đồ Gia Dụng Mới Nhất 2026");
-		String addSuccess = categoryServices.addCategory(newCat);
-		assertNull(addSuccess, "Thêm danh mục tên mới phải thành công");
+		com.fpoly.java5demo.entities.Category addSuccess = categoryServices.addCategory(newCat);
+		assertNotNull(addSuccess, "Thêm danh mục tên mới phải thành công");
 		assertNotNull(newCat.getId());
 
 		// 4. Sửa danh mục giữ nguyên tên cũ của chính nó -> thành công (id trùng id
 		// đang sửa)
-		String updateSelf = categoryServices.updateCategory(newCat);
-		assertNull(updateSelf, "Sửa danh mục giữ nguyên tên chính nó phải thành công");
+		com.fpoly.java5demo.entities.Category updateSelf = categoryServices.updateCategory(newCat);
+		assertNotNull(updateSelf, "Sửa danh mục giữ nguyên tên chính nó phải thành công");
 
 		// 5. Sửa danh mục thành tên danh mục khác đã có -> phải chặn
 		newCat.setName("Điện Thoại & Phụ Kiện");
-		String updateDup = categoryServices.updateCategory(newCat);
-		assertEquals("Trùng tên", updateDup, "Không cho phép sửa danh mục trùng tên với danh mục khác");
+		assertThrows(RuntimeException.class, () -> categoryServices.updateCategory(newCat),
+				"Không cho phép sửa danh mục trùng tên với danh mục khác");
 	}
 
 	@Test

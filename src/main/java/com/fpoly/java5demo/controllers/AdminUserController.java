@@ -50,7 +50,7 @@ public class AdminUserController {
 			user = new User();
 		}
 
-		// [Vinh] Kiểm tra trùng SĐT khi thêm mới hoặc sửa - phục vụ luồng Order (ghi chú code đồng bộ)
+		//  Kiểm tra trùng SĐT khi thêm mới hoặc sửa - phục vụ luồng Order 
 		User existingPhone = userServices.findByPhone(bean.getPhone());
 		if (existingPhone != null && (bean.getId() == null || existingPhone.getId() != bean.getId())) {
 			return "redirect:/admin?tab=users";
@@ -63,7 +63,7 @@ public class AdminUserController {
 		user.setName(bean.getName());
 		user.setEmail(bean.getEmail());
 		user.setPhone(bean.getPhone());
-		user.setAddress(bean.getAddress()); // [Vinh] Đồng bộ địa chỉ phục vụ luồng Order (code của bạn khác - ghi chú lại)
+		user.setAddress(bean.getAddress()); //  Đồng bộ địa chỉ phục vụ luồng Order (code của bạn khác - ghi chú lại)
 		user.setRole(bean.getRole());
 		user.setStatus(bean.isActive());
 
