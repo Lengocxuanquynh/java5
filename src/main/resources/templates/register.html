@@ -62,30 +62,35 @@
 
             <form th:action="@{/register}" th:object="${bean}" method="post">
               <div class="mb-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Tên đăng nhập</label>
                 <input type="text" class="form-control py-2" th:field="*{username}" placeholder="Tên đăng nhập (username)"
                        th:classappend="${#fields.hasErrors('username')} ? 'is-invalid' : ''">
                 <small class="text-danger" th:errors="*{username}"></small>
               </div>
 
               <div class="mb-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Mật khẩu</label>
                 <input type="password" class="form-control py-2" th:field="*{password}" placeholder="Mật khẩu (tối thiểu 6 ký tự)"
                        th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''">
                 <small class="text-danger" th:errors="*{password}"></small>
               </div>
 
               <div class="mb-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Họ và tên</label>
                 <input type="text" class="form-control py-2" th:field="*{name}" placeholder="Họ và tên"
                        th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''">
                 <small class="text-danger" th:errors="*{name}"></small>
               </div>
 
               <div class="mb-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Địa chỉ email</label>
                 <input type="text" class="form-control py-2" th:field="*{email}" placeholder="Địa chỉ email"
                        th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''">
                 <small class="text-danger" th:errors="*{email}"></small>
               </div>
 
               <div class="mb-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Số điện thoại</label>
                 <input type="text" class="form-control py-2" th:field="*{phone}" placeholder="Số điện thoại (VD: 0987654321)"
                        th:classappend="${#fields.hasErrors('phone')} ? 'is-invalid' : ''">
                 <small class="text-danger" th:errors="*{phone}"></small>
