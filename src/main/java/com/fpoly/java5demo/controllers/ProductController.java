@@ -113,20 +113,24 @@ public class ProductController {
 	}
 
 	@PostMapping("/admin/product-form")
-	public String productSave(@Valid @ModelAttribute("bean") ProductFormBean bean, Errors errors,
+	public String productSave(@Valid @ModelAttribute("productBean") ProductFormBean bean, Errors errors,
 			Model model) {
 		if (errors.hasErrors()) {
 			populateDashboardData(model);
 			model.addAttribute("productBean", bean);
+			model.addAttribute("bean", bean);
+			model.addAttribute("categoryBean", new CategoryFormBean());
 			model.addAttribute("activeTab", "products");
 			return "admin/dashboard";
 		}
 
 		Category category = categoryServices.getById(bean.getCategory());
 		if (category == null) {
-			model.addAttribute("errorMessage", "Vui lòng chọn danh mục hợp lệ!");
+			errors.rejectValue("category", "invalid", "Vui lòng chọn danh mục hợp lệ!");
 			populateDashboardData(model);
 			model.addAttribute("productBean", bean);
+			model.addAttribute("bean", bean);
+			model.addAttribute("categoryBean", new CategoryFormBean());
 			model.addAttribute("activeTab", "products");
 			return "admin/dashboard";
 		}
@@ -168,6 +172,8 @@ public class ProductController {
 			model.addAttribute("errorMessage", error);
 			populateDashboardData(model);
 			model.addAttribute("productBean", bean);
+			model.addAttribute("bean", bean);
+			model.addAttribute("categoryBean", new CategoryFormBean());
 			model.addAttribute("activeTab", "products");
 			return "admin/dashboard";
 		}

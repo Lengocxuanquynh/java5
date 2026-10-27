@@ -24,6 +24,32 @@ public class CategoryController {
 	@Autowired
 	private CategoryServices categoryServices;
 
+	@Autowired
+	private com.fpoly.java5demo.services.ProductServices productServices;
+
+	@Autowired
+	private com.fpoly.java5demo.services.UserServices userServices;
+
+	@Autowired
+	private com.fpoly.java5demo.services.OrderServices orderServices;
+
+	private void populateDashboardData(Model model) {
+		model.addAttribute("productCount", productServices.getList().size());
+		model.addAttribute("categoryCount", categoryServices.getList().size());
+		model.addAttribute("userCount", userServices.getAllUsers().size());
+		model.addAttribute("orderCount", orderServices.getOrderCount());
+		model.addAttribute("pendingOrderCount", orderServices.getPendingOrderCount());
+		model.addAttribute("completedRevenue", orderServices.getCompletedRevenue());
+		model.addAttribute("recentOrders", orderServices.getRecentOrders(5));
+
+		model.addAttribute("products", productServices.getList());
+		model.addAttribute("categories", categoryServices.getList());
+		model.addAttribute("orders", orderServices.getAllOrders());
+		model.addAttribute("processingOrders", orderServices.getProcessingOrders());
+		model.addAttribute("completedOrders", orderServices.getCompletedOrders());
+		model.addAttribute("users", userServices.getAllUsers());
+	}
+
 	@GetMapping({ "/admin/categories", "/admin/category-form" })
 	public String listCategories() {
 		return "redirect:/admin?tab=categories";
@@ -35,10 +61,15 @@ public class CategoryController {
 	}
 
 	@PostMapping("/admin/category-form")
-	public String categorySave(@Valid @ModelAttribute("bean") CategoryFormBean bean, Errors errors,
+	public String categorySave(@Valid @ModelAttribute("categoryBean") CategoryFormBean bean, Errors errors,
 			Model model) {
 		if (errors.hasErrors()) {
-			return "redirect:/admin?tab=categories";
+			populateDashboardData(model);
+			model.addAttribute("categoryBean", bean);
+			model.addAttribute("bean", bean);
+			model.addAttribute("productBean", new com.fpoly.java5demo.beans.ProductFormBean());
+			model.addAttribute("activeTab", "categories");
+			return "admin/dashboard";
 		}
 
 		try {
@@ -50,6 +81,13 @@ public class CategoryController {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			errors.rejectValue("name", "duplicate", e.getMessage() != null ? e.getMessage() : "Lỗi lưu danh mục!");
+			populateDashboardData(model);
+			model.addAttribute("categoryBean", bean);
+			model.addAttribute("bean", bean);
+			model.addAttribute("productBean", new com.fpoly.java5demo.beans.ProductFormBean());
+			model.addAttribute("activeTab", "categories");
+			return "admin/dashboard";
 		}
 
 		return "redirect:/admin?tab=categories";
