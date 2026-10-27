@@ -30,11 +30,26 @@ public class AdminOrderController {
 	}
 
 	@GetMapping("/admin/order/{id}")
-	public String viewOrder(@PathVariable("id") int id, Model model) {
+	public String viewOrder(@PathVariable("id") int id,
+			@RequestParam(name = "msg", required = false) String msg,
+			@RequestParam(name = "error", required = false) String error,
+			Model model) {
 		Order order = orderServices.getOrderById(id);
 		if (order == null) {
 			return "redirect:/admin?tab=orders";
 		}
+
+		if ("success".equals(msg)) {
+			model.addAttribute("successMessage", "Cập nhật trạng thái đơn hàng thành công!");
+		}
+		if ("missing_reason".equals(error)) {
+			model.addAttribute("errorMessage", "Vui lòng nhập lý do hủy đơn hàng!");
+		} else if ("invalid_status".equals(error)) {
+			model.addAttribute("errorMessage", "Chuyển trạng thái không hợp lệ theo quy tắc chuyển 1 chiều!");
+		} else if ("error".equals(error)) {
+			model.addAttribute("errorMessage", "Có lỗi xảy ra khi cập nhật trạng thái đơn hàng!");
+		}
+
 		List<OrderDetail> details = orderServices.getOrderDetails(id);
 		model.addAttribute("order", order);
 		model.addAttribute("orderDetails", details);
@@ -47,10 +62,18 @@ public class AdminOrderController {
 			@Valid @ModelAttribute("cancelBean") CancelOrderBean cancelBean, Errors errors) {
 		// Bắt lỗi bằng Bean Validation khi Admin chọn Hủy đơn (status 6)
 		if (status == 6 && errors.hasErrors()) {
-			return "redirect:/admin/order/" + orderId;
+			return "redirect:/admin/order/" + orderId + "?error=missing_reason";
 		}
 
-		orderServices.updateStatus(orderId, status, cancelBean != null ? cancelBean.getReason() : null);
-		return "redirect:/admin/order/" + orderId;
+		try {
+			boolean success = orderServices.updateStatus(orderId, status, cancelBean != null ? cancelBean.getReason() : null);
+			if (success) {
+				return "redirect:/admin/order/" + orderId + "?msg=success";
+			} else {
+				return "redirect:/admin/order/" + orderId + "?error=invalid_status";
+			}
+		} catch (Exception e) {
+			return "redirect:/admin/order/" + orderId + "?error=error";
+		}
 	}
 }

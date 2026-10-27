@@ -140,24 +140,65 @@ public class OrderServices {
 				calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
 		order.setDate(Date.valueOf(dateStr));
 		order.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
-		Order savedOrder = orderJPA.save(order);
 
+		Order savedOrder = null;
 		List<OrderDetail> detailList = new ArrayList<>();
-		for (Product item : products) {
-			int buyQty = allCartItems.get(item.getId());
-			OrderDetail detail = new OrderDetail();
-			detail.setOrder(savedOrder);
-			detail.setProduct(item);
-			detail.setPrice(item.getSalePrice());
-			detail.setQuantity(buyQty);
-			orderDetailJPA.save(detail);
-			detailList.add(detail);
-			item.setQuantity(item.getQuantity() - buyQty);
-			productJPA.save(item);
+		Map<Product, Integer> deductedProducts = new HashMap<>();
+
+		try {
+			// 1. Lưu Order
+			savedOrder = orderJPA.save(order);
+
+			// 2. Lưu từng chi tiết và trừ kho
+			for (Product item : products) {
+				int buyQty = allCartItems.get(item.getId());
+				OrderDetail detail = new OrderDetail();
+				detail.setOrder(savedOrder);
+				detail.setProduct(item);
+				detail.setPrice(item.getSalePrice());
+				detail.setQuantity(buyQty);
+				OrderDetail savedDetail = orderDetailJPA.save(detail);
+				detailList.add(savedDetail);
+
+				item.setQuantity(item.getQuantity() - buyQty);
+				productJPA.save(item);
+				deductedProducts.put(item, buyQty);
+			}
+			savedOrder.setOrderDetails(detailList);
+
+			// 3. Xóa khỏi giỏ hàng
+			cartDetailServices.removeItemsFromCart(user.getId(), ids);
+			return savedOrder;
+		} catch (Exception e) {
+			// ROLLBACK THỦ CÔNG:
+			// a. Hoàn lại kho cho các sản phẩm đã trừ
+			for (Map.Entry<Product, Integer> entry : deductedProducts.entrySet()) {
+				try {
+					Product prod = entry.getKey();
+					prod.setQuantity(prod.getQuantity() + entry.getValue());
+					productJPA.save(prod);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+			// b. Xóa chi tiết đã lỡ lưu
+			for (OrderDetail d : detailList) {
+				try {
+					orderDetailJPA.delete(d);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+			// c. Xóa đơn hàng đã lỡ tạo
+			if (savedOrder != null && savedOrder.getId() > 0) {
+				try {
+					orderJPA.delete(savedOrder);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+			return null;
 		}
-		savedOrder.setOrderDetails(detailList);
-		cartDetailServices.removeItemsFromCart(user.getId(), ids);
-		return savedOrder;
 	}
 
 	public int createOrder(CheckoutBean bean) {
@@ -166,7 +207,18 @@ public class OrderServices {
 
 	public int createOrder(CheckoutBean bean, List<Integer> selectedProdIds) {
 		// Lấy user id từ cookie
-		int userId = Integer.parseInt(Utils.getCookieValue("user_id", request));
+		String userIdStr = Utils.getCookieValue("user_id", request);
+		if (userIdStr == null || userIdStr.trim().isEmpty()) {
+			throw new RuntimeException("Vui lòng đăng nhập để thực hiện đặt hàng!");
+		}
+
+		int userId;
+		try {
+			userId = Integer.parseInt(userIdStr.trim());
+		} catch (NumberFormatException e) {
+			throw new RuntimeException("Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại!");
+		}
+
 		Optional<User> userOptional = userJPA.findById(userId);
 
 		if (!userOptional.isPresent()) {
@@ -211,9 +263,20 @@ public class OrderServices {
 		List<Integer> ids = new ArrayList<>(cartItems.keySet());
 		List<Product> products = productJPA.findAllById(ids);
 
-		// Tính tổng tiền và kiểm tra tồn kho
+		// Kiểm tra sản phẩm bị xóa khỏi DB (Admin xóa trong lúc user đang checkout)
+		if (products.size() != ids.size()) {
+			throw new RuntimeException(
+					"Một số sản phẩm trong giỏ hàng không còn tồn tại. Vui lòng kiểm tra lại giỏ hàng!");
+		}
+
+		// Tính tổng tiền và kiểm tra tồn kho / trạng thái sản phẩm
 		int totalPrice = 0;
 		for (Product item : products) {
+			// Kiểm tra sản phẩm bị ẩn (Admin ẩn trong lúc user đang checkout)
+			if (!item.isStatus()) {
+				throw new RuntimeException(
+						"Sản phẩm '" + item.getName() + "' hiện không còn được bán. Vui lòng kiểm tra lại giỏ hàng!");
+			}
 			int buyQty = cartItems.getOrDefault(item.getId(), 0);
 			if (item.getQuantity() < buyQty || buyQty <= 0) {
 				throw new RuntimeException(
@@ -247,28 +310,70 @@ public class OrderServices {
 		order.setDate(Date.valueOf(dateStr));
 		order.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
 
-		Order savedOrder = orderJPA.save(order);
+		Order savedOrder = null;
+		List<OrderDetail> savedDetails = new ArrayList<>();
+		Map<Product, Integer> deductedProducts = new HashMap<>();
 
-		// Lưu chi tiết đơn hàng và trừ kho
-		for (Product item : products) {
-			int buyQty = cartItems.get(item.getId());
+		try {
+			// 1. Lưu Order
+			savedOrder = orderJPA.save(order);
 
-			OrderDetail detail = new OrderDetail();
-			detail.setOrder(savedOrder);
-			detail.setProduct(item);
-			detail.setPrice(item.getSalePrice());
-			detail.setQuantity(buyQty);
-			orderDetailJPA.save(detail);
+			// 2. Lưu từng chi tiết và trừ kho
+			for (Product item : products) {
+				int buyQty = cartItems.get(item.getId());
 
-			// Trừ số lượng tồn kho
-			item.setQuantity(item.getQuantity() - buyQty);
-			productJPA.save(item);
+				OrderDetail detail = new OrderDetail();
+				detail.setOrder(savedOrder);
+				detail.setProduct(item);
+				detail.setPrice(item.getSalePrice());
+				detail.setQuantity(buyQty);
+				OrderDetail savedDetail = orderDetailJPA.save(detail);
+				savedDetails.add(savedDetail);
+
+				// Trừ số lượng tồn kho
+				item.setQuantity(item.getQuantity() - buyQty);
+				productJPA.save(item);
+				deductedProducts.put(item, buyQty); // Ghi nhận lại sản phẩm và số lượng đã trừ kho
+			}
+
+			// 3. Xóa các sản phẩm đã mua khỏi giỏ hàng
+			cartDetailServices.removeItemsFromCart(userId, ids);
+
+			return savedOrder.getId();
+		} catch (Exception e) {
+			// NẾU GẶP LỖI Ở BẤT KỲ ĐÂU: TỰ TAY ROLLBACK (DỌN DẸP RÁC)
+			// a. Hoàn lại kho cho các sản phẩm đã trừ
+			for (Map.Entry<Product, Integer> entry : deductedProducts.entrySet()) {
+				try {
+					Product prod = entry.getKey();
+					prod.setQuantity(prod.getQuantity() + entry.getValue());
+					productJPA.save(prod);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+
+			// b. Xóa chi tiết đơn hàng đã lỡ lưu
+			for (OrderDetail d : savedDetails) {
+				try {
+					orderDetailJPA.delete(d);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+
+			// c. Xóa đơn hàng đã lỡ tạo
+			if (savedOrder != null && savedOrder.getId() > 0) {
+				try {
+					orderJPA.delete(savedOrder);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+
+			// Ném lỗi tiếp để Controller bắt và hiển thị thông báo
+			throw new RuntimeException("Đặt hàng không thành công: " + e.getMessage(), e);
 		}
-
-		// Chỉ xóa các sản phẩm đã mua khỏi giỏ hàng
-		cartDetailServices.removeItemsFromCart(userId, ids);
-
-		return savedOrder.getId();
 	}
 
 	/**
@@ -366,13 +471,26 @@ public class OrderServices {
 			return false;
 		}
 
-		// Nếu chuyển sang hủy (6), hoàn lại tồn kho và lưu lý do
+		// Nếu chuyển sang hủy (6), hoàn lại tồn kho và lưu lý do (có try-catch rollback)
 		if (newStatus == 6) {
-			restoreStock(orderId);
-			if (cancelReason != null && !cancelReason.trim().isEmpty()) {
-				order.setCancelReason("Admin hủy: " + cancelReason.trim());
-			} else {
-				order.setCancelReason("Admin hủy đơn hàng");
+			String oldReason = order.getCancelReason();
+			try {
+				if (cancelReason != null && !cancelReason.trim().isEmpty()) {
+					order.setCancelReason("Admin hủy: " + cancelReason.trim());
+				} else {
+					order.setCancelReason("Admin hủy đơn hàng");
+				}
+				order.setStatus(newStatus);
+				order.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+				orderJPA.save(order);
+				restoreStock(orderId);
+				return true;
+			} catch (Exception e) {
+				// Rollback lại trạng thái cũ nếu hoàn kho thất bại
+				order.setStatus(currentStatus);
+				order.setCancelReason(oldReason);
+				orderJPA.save(order);
+				throw new RuntimeException("Cập nhật hủy đơn thất bại: " + e.getMessage(), e);
 			}
 		}
 
@@ -401,17 +519,26 @@ public class OrderServices {
 
 		Order order = orderOptional.get();
 		int currentStatus = order.getStatus();
+		String oldReason = order.getCancelReason();
 		if (currentStatus == 1 || currentStatus == 2) {
-			order.setStatus(6); // 6: Huỷ đơn
-			if (cancelReason != null && !cancelReason.trim().isEmpty()) {
-				order.setCancelReason("Admin hủy: " + cancelReason.trim());
-			} else {
-				order.setCancelReason("Admin hủy đơn hàng");
+			try {
+				order.setStatus(6); // 6: Huỷ đơn
+				if (cancelReason != null && !cancelReason.trim().isEmpty()) {
+					order.setCancelReason("Admin hủy: " + cancelReason.trim());
+				} else {
+					order.setCancelReason("Admin hủy đơn hàng");
+				}
+				order.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+				orderJPA.save(order);
+				restoreStock(orderId);
+				return true;
+			} catch (Exception e) {
+				// Rollback lại trạng thái cũ nếu hoàn kho lỗi
+				order.setStatus(currentStatus);
+				order.setCancelReason(oldReason);
+				orderJPA.save(order);
+				throw new RuntimeException("Hủy đơn hàng thất bại: " + e.getMessage(), e);
 			}
-			order.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
-			orderJPA.save(order);
-			restoreStock(orderId);
-			return true;
 		}
 		return false;
 	}
@@ -440,16 +567,26 @@ public class OrderServices {
 
 		// Chỉ cho hủy khi đơn hàng ở trạng thái 1 (Chờ xác nhận)
 		if (order.getStatus() == 1) {
-			order.setStatus(6); // 6: Huỷ đơn
-			if (cancelReason != null && !cancelReason.trim().isEmpty()) {
-				order.setCancelReason("Khách hàng hủy: " + cancelReason.trim());
-			} else {
-				order.setCancelReason("Khách hàng yêu cầu hủy đơn");
+			int currentStatus = order.getStatus();
+			String oldReason = order.getCancelReason();
+			try {
+				order.setStatus(6); // 6: Huỷ đơn
+				if (cancelReason != null && !cancelReason.trim().isEmpty()) {
+					order.setCancelReason("Khách hàng hủy: " + cancelReason.trim());
+				} else {
+					order.setCancelReason("Khách hàng yêu cầu hủy đơn");
+				}
+				order.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+				orderJPA.save(order);
+				restoreStock(orderId);
+				return true;
+			} catch (Exception e) {
+				// Rollback lại trạng thái cũ nếu hoàn kho lỗi
+				order.setStatus(currentStatus);
+				order.setCancelReason(oldReason);
+				orderJPA.save(order);
+				throw new RuntimeException("Hủy đơn hàng thất bại: " + e.getMessage(), e);
 			}
-			order.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
-			orderJPA.save(order);
-			restoreStock(orderId);
-			return true;
 		}
 		return false;
 	}

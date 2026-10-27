@@ -82,6 +82,12 @@ public class CartDetailServices {
 		if (!product.isStatus()) {
 			throw new RuntimeException("Sản phẩm hiện đang tạm khóa hoặc không khả dụng!");
 		}
+		if (product.getQuantity() <= 0) {
+			throw new RuntimeException("Sản phẩm đã hết hàng trong kho!");
+		}
+		if (count > product.getQuantity()) {
+			throw new RuntimeException("Số lượng yêu cầu vượt quá số lượng trong kho!");
+		}
 
 		Optional<CartDetail> opt = cartDetailJPA.findByUserIdAndProductId(userId, prodId);
 		if (opt.isPresent()) {
