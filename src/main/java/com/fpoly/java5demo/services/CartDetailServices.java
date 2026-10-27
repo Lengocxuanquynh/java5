@@ -92,9 +92,13 @@ public class CartDetailServices {
 		Optional<CartDetail> opt = cartDetailJPA.findByUserIdAndProductId(userId, prodId);
 		if (opt.isPresent()) {
 			CartDetail cd = opt.get();
-			int newQty = cd.getQuantity() + count;
+			int currentQty = cd.getQuantity();
+			if (currentQty >= product.getQuantity()) {
+				throw new RuntimeException("max_cart_limit");
+			}
+			int newQty = currentQty + count;
 			if (newQty > product.getQuantity()) {
-				newQty = product.getQuantity();
+				throw new RuntimeException("exceed_cart_limit");
 			}
 			if (newQty <= 0) {
 				cartDetailJPA.delete(cd);

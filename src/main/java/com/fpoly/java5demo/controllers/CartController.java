@@ -40,6 +40,10 @@ public class CartController {
 			model.addAttribute("errorMessage", "Số lượng sản phẩm trong kho không đủ!");
 		} else if ("invalid_quantity".equals(error)) {
 			model.addAttribute("errorMessage", "Số lượng sản phẩm không hợp lệ!");
+		} else if ("max_cart_limit".equals(error)) {
+			model.addAttribute("errorMessage", "Bạn đã có đủ số lượng sản phẩm này trong giỏ hàng (đạt giới hạn tối đa trong kho)!");
+		} else if ("exceed_cart_limit".equals(error)) {
+			model.addAttribute("errorMessage", "Số lượng thêm vào giỏ hàng vượt quá số lượng còn lại trong kho!");
 		}
 
 		if ("clear_success".equals(msg)) {
@@ -81,6 +85,12 @@ public class CartController {
 			return "redirect:/product/" + productId + "?added=true";
 		} catch (Exception e) {
 			e.printStackTrace();
+			String errorMsg = e.getMessage();
+			if ("max_cart_limit".equals(errorMsg)) {
+				return "redirect:/product/" + productId + "?error=max_cart_limit";
+			} else if ("exceed_cart_limit".equals(errorMsg)) {
+				return "redirect:/product/" + productId + "?error=exceed_cart_limit";
+			}
 			return "redirect:/product/" + productId + "?error=out_of_stock";
 		}
 	}

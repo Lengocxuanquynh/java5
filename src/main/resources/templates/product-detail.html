@@ -41,7 +41,10 @@
         <span th:if="${param.error[0] == 'admin_cannot_buy'}">Tài khoản Quản Trị Viên (Admin) không được phép mua hàng!</span>
         <span th:if="${param.error[0] == 'out_of_stock'}">Số lượng yêu cầu vượt quá số lượng còn lại trong kho!</span>
         <span th:if="${param.error[0] == 'invalid_quantity'}">Số lượng đặt mua không hợp lệ (phải từ 1 trở lên)!</span>
-        <span th:if="${param.error[0] != 'admin_cannot_buy' && param.error[0] != 'out_of_stock' && param.error[0] != 'invalid_quantity'}" th:text="${param.error[0]}">Có lỗi xảy ra khi thêm vào giỏ!</span>
+        <span th:if="${param.error[0] == 'max_cart_limit'}">Bạn đã có đủ số lượng sản phẩm này trong giỏ hàng (đã đạt giới hạn tối đa có sẵn trong kho)!</span>
+        <span th:if="${param.error[0] == 'exceed_cart_limit'}">Số lượng thêm vào giỏ hàng vượt quá số lượng còn lại trong kho!</span>
+        <span th:if="${param.error[0] != 'admin_cannot_buy' && param.error[0] != 'out_of_stock' && param.error[0] != 'invalid_quantity' && param.error[0] != 'max_cart_limit' && param.error[0] != 'exceed_cart_limit'}" th:text="${param.error[0]}">Có lỗi xảy ra khi thêm vào giỏ!</span>
+        <a th:if="${param.error[0] == 'max_cart_limit' || param.error[0] == 'exceed_cart_limit'}" th:href="@{/cart}" class="btn btn-sm btn-outline-danger ms-3">Xem Giỏ Hàng</a>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
       <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
