@@ -85,10 +85,12 @@ public class ProductController {
 		// Category Form Bean
 		CategoryFormBean catBean = new CategoryFormBean();
 		if (editCatId != null && editCatId > 0) {
-			Category c = categoryServices.getById(editCatId);
-			if (c != null) {
+			try {
+				Category c = categoryServices.getById(editCatId);
 				catBean.setId(Optional.of(c.getId()));
 				catBean.setName(c.getName());
+			} catch (Exception e) {
+				model.addAttribute("errorMessage", e.getMessage());
 			}
 		}
 		model.addAttribute("categoryBean", catBean);
@@ -122,9 +124,11 @@ public class ProductController {
 			return "admin/dashboard";
 		}
 
-		Category category = categoryServices.getById(bean.getCategory());
-		if (category == null) {
-			model.addAttribute("errorMessage", "Vui lòng chọn danh mục hợp lệ!");
+		Category category;
+		try {
+			category = categoryServices.getById(bean.getCategory());
+		} catch (Exception e) {
+			model.addAttribute("errorMessage", e.getMessage());
 			populateDashboardData(model);
 			model.addAttribute("productBean", bean);
 			model.addAttribute("activeTab", "products");

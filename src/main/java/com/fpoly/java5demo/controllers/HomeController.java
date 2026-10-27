@@ -87,15 +87,18 @@ public class HomeController {
 
 	@GetMapping("/category/{id}")
 	public String productByCategory(@PathVariable("id") int id, Model model) {
-		Category category = categoryServices.getById(id);
-		if (category == null) {
-			return "redirect:/";
+		try {
+			Category category = categoryServices.getById(id);
+			List<Product> products = productServices.getByCategory(id);
+			model.addAttribute("category", category);
+			model.addAttribute("products", products);
+			model.addAttribute("selectedCategory", id);
+			return "home";
+		} catch (Exception e) {
+			model.addAttribute("errorMessage", e.getMessage());
+			model.addAttribute("products", productServices.getAvailableProducts());
+			return "home";
 		}
-		List<Product> products = productServices.getByCategory(id);
-		model.addAttribute("category", category);
-		model.addAttribute("products", products);
-		model.addAttribute("selectedCategory", id);
-		return "home";
 	}
 
 	@GetMapping("/search")
