@@ -65,7 +65,7 @@ public class CartController {
 
 	@PostMapping("/cart/add")
 	public String addToCart(@RequestParam("productId") int productId,
-			@RequestParam(name = "quantity", defaultValue = "1") int quantity,
+			@RequestParam(name = "quantity", defaultValue = "1") Integer quantity,
 			@RequestParam(name = "buyNow", defaultValue = "false") boolean buyNow,
 			HttpServletRequest request) {
 		User currentUser = userServices.getLoggedInUser(request);
@@ -77,12 +77,10 @@ public class CartController {
 			return "redirect:/product/" + productId + "?error=admin_cannot_buy";
 		}
 
-		if (quantity <= 0) {
-			return "redirect:/product/" + productId + "?error=invalid_quantity";
-		}
+		int safeQty = (quantity != null && quantity > 0) ? quantity : 1;
 
 		try {
-			cartDetailServices.addToCart(currentUser.getId(), productId, quantity);
+			cartDetailServices.addToCart(currentUser.getId(), productId, safeQty);
 			if (buyNow) {
 				return "redirect:/checkout?items=" + productId;
 			}
@@ -124,15 +122,17 @@ public class CartController {
 
 	@PostMapping("/cart/update")
 	public String updateQuantity(@RequestParam("productId") int productId,
-			@RequestParam("quantity") int quantity,
+			@RequestParam(name = "quantity", defaultValue = "1") Integer quantity,
 			HttpServletRequest request) {
 		User currentUser = userServices.getLoggedInUser(request);
 		if (currentUser == null) {
 			return "redirect:/login?redirect=/cart";
 		}
 
+		int safeQty = (quantity != null && quantity > 0) ? quantity : 1;
+
 		try {
-			cartDetailServices.updateQuantity(currentUser.getId(), productId, quantity);
+			cartDetailServices.updateQuantity(currentUser.getId(), productId, safeQty);
 		} catch (Exception e) {
 			e.printStackTrace();
 			String errorMsg = e.getMessage();

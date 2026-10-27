@@ -78,7 +78,7 @@
               <label for="category" class="form-label small fw-semibold">Danh mục *</label>
               <select th:field="*{category}" class="form-select" id="category"
                       th:classappend="${#fields.hasErrors('category')} ? 'is-invalid' : ''">
-                <option value="0">---- Chọn danh mục ----</option>
+                <option value="">---- Chọn danh mục ----</option>
                 <th:block th:each="cat : ${categories}">
                   <option th:value="${cat.id}" th:text="${cat.name}"></option>
                 </th:block>

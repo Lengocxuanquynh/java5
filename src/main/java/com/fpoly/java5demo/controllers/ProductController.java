@@ -124,7 +124,14 @@ public class ProductController {
 			return "admin/dashboard";
 		}
 
-		Category category = categoryServices.getById(bean.getCategory());
+		Category category = null;
+		if (bean.getCategory() != null) {
+			try {
+				category = categoryServices.getById(bean.getCategory());
+			} catch (Exception e) {
+				category = null;
+			}
+		}
 		if (category == null) {
 			errors.rejectValue("category", "invalid", "Vui lòng chọn danh mục hợp lệ!");
 			populateDashboardData(model);
@@ -148,13 +155,14 @@ public class ProductController {
 		}
 
 		product.setName(bean.getName());
-		product.setPrice(bean.getPrice());
-		product.setQuantity(bean.getQuantity());
-		if (bean.getQuantity() <= 0) {
+		product.setPrice(bean.getPrice() != null ? bean.getPrice() : 0);
+		int qty = (bean.getQuantity() != null) ? bean.getQuantity() : 0;
+		product.setQuantity(qty);
+		if (qty <= 0) {
 			product.setQuantity(0);
 			product.setStatus(false); // Số lượng = 0 thì tự động ẩn
 		} else {
-			product.setStatus(bean.getStatus() == 1);
+			product.setStatus(bean.getStatus() != null && bean.getStatus() == 1);
 		}
 		product.setCategory(category);
 		product.setDescription(bean.getDescription());

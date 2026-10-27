@@ -18,10 +18,9 @@ public class CategoryFormBean {
 	@NotBlank(message = "Tên danh mục không được để trống")
 	private String name;
 
-	// Tự động trim ngay khi form submit nhận dữ liệu
-	// public void setName(String name) {
-	// 	this.name = (name != null) ? name.trim() : null;
-	// }
+	public void setName(String name) {
+		this.name = (name != null) ? name.trim() : null;
+	}
 
 	public Category convertBeanToEntity() {
 		Category category = new Category();
