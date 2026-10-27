@@ -92,10 +92,50 @@ class Java5ApplicationTests {
 	private com.fpoly.java5demo.services.CategoryServices categoryServices;
 
 	@Autowired
+	private com.fpoly.java5demo.jpas.CategoryJPA categoryJPA;
+
+	@Autowired
 	private com.fpoly.java5demo.jpas.ProductJPA productJPA;
 
 	@Autowired
 	private com.fpoly.java5demo.services.ProductServices productServices;
+
+	@Test
+	void testCategoryDuplicateValidation() {
+		// 1. Kiểm tra tồn tại bằng Optional
+		java.util.Optional<com.fpoly.java5demo.entities.Category> catOpt = categoryJPA
+				.checkNameExist("Điện Thoại & Phụ Kiện");
+		assertTrue(catOpt.isPresent(), "Category JPA Optional checkNameExist phải tìm thấy");
+
+		// Kiểm tra không phân biệt hoa thường và khoảng trắng
+		java.util.Optional<com.fpoly.java5demo.entities.Category> catOptCase = categoryJPA
+				.checkNameExist("  điện thoại & phụ kiện  ");
+		assertTrue(catOptCase.isPresent(),
+				"Category JPA Optional checkNameExist phải tìm thấy khi viết thường và có khoảng trắng");
+
+		// 2. Thêm mới trùng tên -> phải chặn
+		com.fpoly.java5demo.entities.Category dupCat = new com.fpoly.java5demo.entities.Category();
+		dupCat.setName("  Điện Thoại & Phụ Kiện  ");
+		assertThrows(RuntimeException.class, () -> categoryServices.addCategory(dupCat),
+				"Không cho phép thêm danh mục trùng tên");
+
+		// 3. Thêm mới tên hợp lệ -> thành công
+		com.fpoly.java5demo.entities.Category newCat = new com.fpoly.java5demo.entities.Category();
+		newCat.setName("Đồ Gia Dụng Mới Nhất 2026");
+		com.fpoly.java5demo.entities.Category addSuccess = categoryServices.addCategory(newCat);
+		assertNotNull(addSuccess, "Thêm danh mục tên mới phải thành công");
+		assertNotNull(newCat.getId());
+
+		// 4. Sửa danh mục giữ nguyên tên cũ của chính nó -> thành công (id trùng id
+		// đang sửa)
+		com.fpoly.java5demo.entities.Category updateSelf = categoryServices.updateCategory(newCat);
+		assertNotNull(updateSelf, "Sửa danh mục giữ nguyên tên chính nó phải thành công");
+
+		// 5. Sửa danh mục thành tên danh mục khác đã có -> phải chặn
+		newCat.setName("Điện Thoại & Phụ Kiện");
+		assertThrows(RuntimeException.class, () -> categoryServices.updateCategory(newCat),
+				"Không cho phép sửa danh mục trùng tên với danh mục khác");
+	}
 
 	@Test
 	void testProductDuplicateValidation() {

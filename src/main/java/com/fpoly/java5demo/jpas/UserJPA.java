@@ -28,7 +28,7 @@ public interface UserJPA extends JpaRepository<User, Integer> {
 	@Query(value = "SELECT COUNT(*) FROM users WHERE phone = ?1", nativeQuery = true)
 	int countByPhone(String phone);
 
-	// [Vinh] Tìm user theo SĐT
+	//  Tìm user theo SĐT
 	@Query(value = "SELECT * FROM users WHERE phone = ?1", nativeQuery = true)
 	Optional<User> findByPhone(String phone);
 

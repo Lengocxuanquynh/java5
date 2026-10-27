@@ -15,7 +15,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 // [AuthInterceptor] Chặn và kiểm tra quyền tập trung cho CẢ 2 BÊN (User & Admin)
-// Chuẩn bài giảng thầy (Java5-SD21201): Dùng Cookie + truy vấn trực tiếp DB, không dùng Session
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
 

@@ -262,7 +262,9 @@ public class CartDetailServices {
 		int count = 0;
 		List<CartDetail> details = cartDetailJPA.findByUserId(userId);
 		for (CartDetail cd : details) {
-			count += cd.getQuantity();
+			if (cd.getProduct() != null && cd.getProduct().isStatus()) {
+				count += cd.getQuantity();
+			}
 		}
 		return count;
 	}
