@@ -86,7 +86,9 @@ public class CartController {
 		} catch (Exception e) {
 			e.printStackTrace();
 			String errorMsg = e.getMessage();
-			if ("max_cart_limit".equals(errorMsg)) {
+			if ("product_disabled".equals(errorMsg)) {
+				return "redirect:/?msg=product_disabled";
+			} else if ("max_cart_limit".equals(errorMsg)) {
 				return "redirect:/product/" + productId + "?error=max_cart_limit";
 			} else if ("exceed_cart_limit".equals(errorMsg)) {
 				return "redirect:/product/" + productId + "?error=exceed_cart_limit";

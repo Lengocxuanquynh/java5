@@ -76,11 +76,8 @@ public class CartDetailServices {
 		}
 
 		Product product = productServices.findById(prodId);
-		if (product == null) {
-			throw new RuntimeException("Sản phẩm không tồn tại!");
-		}
-		if (!product.isStatus()) {
-			throw new RuntimeException("Sản phẩm hiện đang tạm khóa hoặc không khả dụng!");
+		if (product == null || !product.isStatus()) {
+			throw new RuntimeException("product_disabled");
 		}
 		if (product.getQuantity() <= 0) {
 			throw new RuntimeException("Sản phẩm đã hết hàng trong kho!");
