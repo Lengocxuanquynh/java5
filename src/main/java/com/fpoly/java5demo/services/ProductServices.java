@@ -25,6 +25,12 @@ public class ProductServices {
 	@Autowired
 	private ImageServices imageService;
 
+	@Autowired
+	private com.fpoly.java5demo.jpas.CartDetailJPA cartDetailJPA;
+
+	@Autowired
+	private com.fpoly.java5demo.jpas.OrderDetailJPA orderDetailJPA;
+
 	public List<Product> getList() {
 		try {
 			return productJPA.findAllProducts();
@@ -152,28 +158,30 @@ public class ProductServices {
 	public String remove(int id) {
 		try {
 			Optional<Product> prodOptional = productJPA.findById(id);
-			if (prodOptional.isPresent()) {
-				Product product = prodOptional.get();
-				if (product.getCartDetails() != null && product.getCartDetails().size() > 0) {
-					product.setStatus(false);
-					productJPA.save(product);
-				} else {
-					try {
-						if (product.getImages() != null) {
-							for (Image image : product.getImages()) {
-								imageJPA.delete(image);
-							}
-						}
-						productJPA.delete(product);
-					} catch (Exception ex) {
-						// Nếu có ràng buộc dữ liệu đơn hàng thì tự động chuyển sang ẩn sản phẩm
-						product.setStatus(false);
-						productJPA.save(product);
-					}
-				}
-				return null;
+			if (!prodOptional.isPresent()) {
+				return "Không tìm thấy sản phẩm";
 			}
-			return "Không tìm thấy sản phẩm";
+			Product product = prodOptional.get();
+
+			// 1. Nếu sản phẩm đã từng phát sinh trong đơn hàng (order_details)
+			// -> Bắt buộc không được xóa cứng (để bảo vệ lịch sử hóa đơn / kế toán)
+			// -> Tự động chuyển sang trạng thái Ẩn
+			if (orderDetailJPA.countByProductId(id) > 0) {
+				product.setStatus(false);
+				productJPA.save(product);
+				return "Sản phẩm đã có trong lịch sử đơn hàng, hệ thống đã tự động chuyển sang trạng thái Ẩn!";
+			}
+
+			// 2. Nếu chưa từng phát sinh đơn hàng:
+			// a. Xóa ảnh phụ liên quan
+			imageJPA.deleteByProductId(id);
+
+			// b. Xóa sản phẩm khỏi giỏ hàng của tất cả người dùng
+			cartDetailJPA.deleteByProductId(id);
+
+			// c. Xóa vĩnh viễn sản phẩm khỏi Database
+			productJPA.delete(product);
+			return null;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return "Lỗi xóa sản phẩm: " + e.getMessage();

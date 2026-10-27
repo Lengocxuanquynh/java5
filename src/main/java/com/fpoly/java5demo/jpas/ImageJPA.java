@@ -11,5 +11,10 @@ public interface ImageJPA extends JpaRepository<Image, Integer> {
 
 	@Query(value = "SELECT * FROM images WHERE product_id = ?1", nativeQuery = true)
 	List<Image> findByProductId(int productId);
+
+	@org.springframework.data.jpa.repository.Modifying
+	@org.springframework.transaction.annotation.Transactional
+	@Query(value = "DELETE FROM images WHERE product_id = ?1", nativeQuery = true)
+	void deleteByProductId(int productId);
 }
 

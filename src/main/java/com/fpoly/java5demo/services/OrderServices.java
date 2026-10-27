@@ -278,9 +278,24 @@ public class OrderServices {
 						"Sản phẩm '" + item.getName() + "' hiện không còn được bán. Vui lòng kiểm tra lại giỏ hàng!");
 			}
 			int buyQty = cartItems.getOrDefault(item.getId(), 0);
-			if (item.getQuantity() < buyQty || buyQty <= 0) {
+			if (item.getQuantity() <= 0) {
+				// Sản phẩm đã hết hàng trong kho -> tự động dọn khỏi giỏ hàng
+				cartDetailServices.removeCart(userId, item.getId());
 				throw new RuntimeException(
-						"Sản phẩm '" + item.getName() + "' không đủ số lượng trong kho!");
+						"Sản phẩm '" + item.getName() + "' hiện đã hết hàng trong kho. Hệ thống đã xóa sản phẩm khỏi giỏ hàng của bạn!");
+			}
+			if (item.getQuantity() < buyQty) {
+				// Tồn kho không đủ số lượng muốn mua -> tự động hạ giỏ hàng xuống bằng tồn kho còn lại
+				cartDetailServices.updateQuantity(userId, item.getId(), item.getQuantity());
+				throw new RuntimeException(
+						"Sản phẩm '" + item.getName() + "' trong kho chỉ còn " + item.getQuantity()
+								+ " cái (bạn đang chọn " + buyQty
+								+ " cái). Hệ thống đã tự động điều chỉnh số lượng trong giỏ hàng về "
+								+ item.getQuantity() + ". Vui lòng kiểm tra lại đơn hàng!");
+			}
+			if (buyQty <= 0) {
+				throw new RuntimeException(
+						"Số lượng mua sản phẩm '" + item.getName() + "' không hợp lệ!");
 			}
 			totalPrice += buyQty * item.getSalePrice();
 		}

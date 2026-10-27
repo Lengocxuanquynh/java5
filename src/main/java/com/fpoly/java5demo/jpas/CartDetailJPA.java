@@ -32,5 +32,10 @@ public interface CartDetailJPA extends JpaRepository<CartDetail, Integer> {
 	@Transactional
 	@Query(value = "DELETE FROM cart_details WHERE user_id=?1 AND prod_id IN (?2)", nativeQuery = true)
 	void deleteByUserIdAndProductIds(int userId, List<Integer> productIds);
+
+	@Modifying
+	@Transactional
+	@Query(value = "DELETE FROM cart_details WHERE prod_id=?1", nativeQuery = true)
+	void deleteByProductId(int productId);
 }
 

@@ -222,6 +222,15 @@ public class CartDetailServices {
 			}
 			Product product = cd.getProduct();
 			if (product != null && product.isStatus()) {
+				// Tự động đồng bộ số lượng tồn kho thực tế
+				if (product.getQuantity() <= 0) {
+					cartDetailJPA.delete(cd);
+					continue;
+				}
+				if (cd.getQuantity() > product.getQuantity()) {
+					cd.setQuantity(product.getQuantity());
+					cartDetailJPA.save(cd);
+				}
 				items.add(new CartItemBean(product, cd.getQuantity()));
 			}
 		}
@@ -263,6 +272,15 @@ public class CartDetailServices {
 		List<CartDetail> details = cartDetailJPA.findByUserId(userId);
 		for (CartDetail cd : details) {
 			if (cd.getProduct() != null && cd.getProduct().isStatus()) {
+				Product product = cd.getProduct();
+				if (product.getQuantity() <= 0) {
+					cartDetailJPA.delete(cd);
+					continue;
+				}
+				if (cd.getQuantity() > product.getQuantity()) {
+					cd.setQuantity(product.getQuantity());
+					cartDetailJPA.save(cd);
+				}
 				count += cd.getQuantity();
 			}
 		}
@@ -282,7 +300,16 @@ public class CartDetailServices {
 		List<CartDetail> details = cartDetailJPA.findByUserId(userId);
 		for (CartDetail cd : details) {
 			if (cd.getProduct() != null && cd.getProduct().isStatus()) {
-				cartMap.put(cd.getProduct().getId(), cd.getQuantity());
+				Product product = cd.getProduct();
+				if (product.getQuantity() <= 0) {
+					cartDetailJPA.delete(cd);
+					continue;
+				}
+				if (cd.getQuantity() > product.getQuantity()) {
+					cd.setQuantity(product.getQuantity());
+					cartDetailJPA.save(cd);
+				}
+				cartMap.put(product.getId(), cd.getQuantity());
 			}
 		}
 		return cartMap;
