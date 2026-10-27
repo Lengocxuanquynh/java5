@@ -153,3 +153,4 @@ INSERT INTO order_details (price, quantity, order_id, prod_id) VALUES
 GO
 
 PRINT N'Khởi tạo cơ sở dữ liệu Shopee Clone (Java 5) thành công!';
+ALTER TABLE orders ADD cancel_reason NVARCHAR(255);
