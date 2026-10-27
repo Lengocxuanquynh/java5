@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 
 import com.fpoly.java5demo.beans.CancelOrderBean;
 import com.fpoly.java5demo.beans.CartItemBean;
@@ -70,7 +70,7 @@ public class OrderController {
 			// Lấy danh sách sản phẩm trong giỏ qua OrderServices
 			List<CartItemBean> cartItems = orderServices.getCheckoutCartItems(items);
 			if (cartItems.isEmpty()) {
-				return "redirect:/cart";
+				return "redirect:/cart?error=no_items_selected";
 			}
 
 			int totalAmount = orderServices.calculateTotalAmount(cartItems);
@@ -114,7 +114,7 @@ public class OrderController {
 
 			List<CartItemBean> cartItems = orderServices.getCheckoutCartItems(items);
 			if (cartItems.isEmpty()) {
-				return "redirect:/cart";
+				return "redirect:/cart?error=no_items_selected";
 			}
 
 			int totalAmount = orderServices.calculateTotalAmount(cartItems);
@@ -135,11 +135,19 @@ public class OrderController {
 			return "redirect:/user/order-success/" + orderId;
 		} catch (Exception e) {
 			e.printStackTrace();
-			String redirectUrl = "redirect:/user/checkout";
-			if (items != null && !items.isEmpty()) {
-				redirectUrl += "?items=" + items.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining("&items="));
-			}
-			return redirectUrl;
+			User currentUser = getCurrentUser();
+			List<CartItemBean> cartItems = orderServices.getCheckoutCartItems(items);
+			int totalAmount = orderServices.calculateTotalAmount(cartItems);
+			int totalQuantity = orderServices.calculateTotalQuantity(cartItems);
+
+			model.addAttribute("errorMessage",
+					e.getMessage() != null ? e.getMessage() : "Đặt hàng không thành công. Vui lòng thử lại!");
+			model.addAttribute("currentUser", currentUser);
+			model.addAttribute("cartItems", cartItems);
+			model.addAttribute("totalAmount", totalAmount);
+			model.addAttribute("cartCount", totalQuantity);
+			model.addAttribute("selectedItems", items);
+			return "checkout";
 		}
 	}
 
@@ -170,7 +178,9 @@ public class OrderController {
 	}
 
 	@GetMapping("/user/orders")
-	public String myOrders(Model model) {
+	public String myOrders(@RequestParam(name = "msg", required = false) String msg,
+			@RequestParam(name = "error", required = false) String error,
+			Model model) {
 		try {
 			User currentUser = getCurrentUser();
 
@@ -181,6 +191,24 @@ public class OrderController {
 			// Admin được chuyển sang trang quản lý đơn hàng toàn sàn
 			if (currentUser.getRole() == 1) {
 				return "redirect:/admin/orders";
+			}
+
+			if ("cancel_success".equals(msg)) {
+				model.addAttribute("successMessage", "Đã hủy đơn hàng thành công!");
+			} else if ("received_success".equals(msg)) {
+				model.addAttribute("successMessage", "Xác nhận đã nhận đơn hàng thành công!");
+			}
+
+			if ("missing_reason".equals(error)) {
+				model.addAttribute("errorMessage", "Vui lòng nhập lý do hủy đơn hàng!");
+			} else if ("cancel_failed".equals(error)) {
+				model.addAttribute("errorMessage", "Không thể hủy đơn hàng (chỉ có thể hủy khi đơn ở trạng thái 'Chờ xác nhận')!");
+			} else if ("received_failed".equals(error)) {
+				model.addAttribute("errorMessage", "Không thể xác nhận (chỉ áp dụng cho đơn ở trạng thái 'Đã giao hàng')!");
+			} else if ("cancel_error".equals(error)) {
+				model.addAttribute("errorMessage", "Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại!");
+			} else if ("received_error".equals(error)) {
+				model.addAttribute("errorMessage", "Có lỗi xảy ra khi xác nhận nhận hàng!");
 			}
 
 			List<Order> orders = orderServices.getOrdersByUser(currentUser.getId());
@@ -233,8 +261,7 @@ public class OrderController {
 
 	@PostMapping("/user/order/cancel/{id}")
 	public String cancelMyOrder(@PathVariable("id") int id,
-			@Valid @ModelAttribute("cancelBean") CancelOrderBean cancelBean, Errors errors,
-			RedirectAttributes redirectAttributes) {
+			@Valid @ModelAttribute("cancelBean") CancelOrderBean cancelBean, Errors errors) {
 		try {
 			User currentUser = getCurrentUser();
 			if (currentUser == null) {
@@ -243,17 +270,19 @@ public class OrderController {
 
 			// 1. Bắt lỗi bắt buộc nhập lý do bằng Bean Validation (không bắt bằng HTML)
 			if (errors.hasErrors()) {
-				redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng nhập lý do hủy đơn hàng!");
-				return "redirect:/user/orders";
+				return "redirect:/user/orders?error=missing_reason";
 			}
 
-			orderServices.cancelOrder(id, currentUser.getId(), cancelBean.getReason());
-			redirectAttributes.addFlashAttribute("successMessage", "Đã hủy đơn hàng #" + id + " thành công!");
+			boolean cancelled = orderServices.cancelOrder(id, currentUser.getId(), cancelBean.getReason());
+			if (cancelled) {
+				return "redirect:/user/orders?msg=cancel_success";
+			} else {
+				return "redirect:/user/orders?error=cancel_failed";
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại!");
+			return "redirect:/user/orders?error=cancel_error";
 		}
-		return "redirect:/user/orders";
 	}
 
 	@PostMapping("/user/order/received/{id}")
@@ -264,10 +293,15 @@ public class OrderController {
 				return "redirect:/login?redirect=/user/orders";
 			}
 
-			orderServices.confirmReceived(id, currentUser.getId());
+			boolean confirmed = orderServices.confirmReceived(id, currentUser.getId());
+			if (confirmed) {
+				return "redirect:/user/orders?msg=received_success";
+			} else {
+				return "redirect:/user/orders?error=received_failed";
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			return "redirect:/user/orders?error=received_error";
 		}
-		return "redirect:/user/orders";
 	}
 }

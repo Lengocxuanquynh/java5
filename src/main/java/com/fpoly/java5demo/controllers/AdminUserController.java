@@ -63,9 +63,9 @@ public class AdminUserController {
 		user.setName(bean.getName());
 		user.setEmail(bean.getEmail());
 		user.setPhone(bean.getPhone());
-		user.setAddress(bean.getAddress()); //  Đồng bộ địa chỉ phục vụ luồng Order (code của bạn khác - ghi chú lại)
-		user.setRole(bean.getRole());
-		user.setStatus(bean.isActive());
+		user.setAddress(bean.getAddress());
+		user.setRole(bean.getRole() != null ? bean.getRole() : 0);
+		user.setStatus(bean.getActive() != null ? bean.getActive() : true);
 
 		userServices.save(user);
 

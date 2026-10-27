@@ -73,7 +73,7 @@ public class HomeController {
 	public String productDetail(@PathVariable("id") int id, Model model) {
 		Product product = productServices.findById(id);
 		if (product == null || !product.isStatus()) {
-			return "redirect:/";
+			return "redirect:/?msg=product_disabled";
 		}
 
 		List<Product> relatedProducts = productServices.getByCategory(product.getCategory().getId());

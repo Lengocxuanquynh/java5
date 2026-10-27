@@ -63,7 +63,7 @@
           </a>
         </div>
 
-        <form method="post" th:action="@{/admin/product-form}" th:object="${bean}" enctype="multipart/form-data">
+        <form method="post" th:action="@{/admin/product-form}" th:object="${bean}" enctype="multipart/form-data" novalidate>
           <input type="hidden" th:field="*{id}">
 
           <div class="row g-3">
@@ -78,7 +78,7 @@
               <label for="category" class="form-label small fw-semibold">Danh mục *</label>
               <select th:field="*{category}" class="form-select" id="category"
                       th:classappend="${#fields.hasErrors('category')} ? 'is-invalid' : ''">
-                <option value="0">---- Chọn danh mục ----</option>
+                <option value="">---- Chọn danh mục ----</option>
                 <th:block th:each="cat : ${categories}">
                   <option th:value="${cat.id}" th:text="${cat.name}"></option>
                 </th:block>
@@ -88,14 +88,14 @@
 
             <div class="col-md-4">
               <label for="price" class="form-label small fw-semibold">Giá niêm yết (VNĐ) *</label>
-              <input type="number" class="form-control" id="price" th:field="*{price}" min="1000" step="1000"
+              <input type="number" class="form-control" id="price" th:field="*{price}"
                      th:classappend="${#fields.hasErrors('price')} ? 'is-invalid' : ''">
               <small class="text-danger" th:errors="*{price}"></small>
             </div>
 
             <div class="col-md-4">
               <label for="quantity" class="form-label small fw-semibold">Số lượng trong kho *</label>
-              <input type="number" class="form-control" id="quantity" th:field="*{quantity}" min="0"
+              <input type="number" class="form-control" id="quantity" th:field="*{quantity}"
                      th:classappend="${#fields.hasErrors('quantity')} ? 'is-invalid' : ''">
               <small class="text-danger" th:errors="*{quantity}"></small>
             </div>

@@ -76,19 +76,26 @@ public class CartDetailServices {
 		}
 
 		Product product = productServices.findById(prodId);
-		if (product == null) {
-			throw new RuntimeException("Sản phẩm không tồn tại!");
+		if (product == null || !product.isStatus()) {
+			throw new RuntimeException("product_disabled");
 		}
-		if (!product.isStatus()) {
-			throw new RuntimeException("Sản phẩm hiện đang tạm khóa hoặc không khả dụng!");
+		if (product.getQuantity() <= 0) {
+			throw new RuntimeException("Sản phẩm đã hết hàng trong kho!");
+		}
+		if (count > product.getQuantity()) {
+			throw new RuntimeException("Số lượng yêu cầu vượt quá số lượng trong kho!");
 		}
 
 		Optional<CartDetail> opt = cartDetailJPA.findByUserIdAndProductId(userId, prodId);
 		if (opt.isPresent()) {
 			CartDetail cd = opt.get();
-			int newQty = cd.getQuantity() + count;
+			int currentQty = cd.getQuantity();
+			if (currentQty >= product.getQuantity()) {
+				throw new RuntimeException("max_cart_limit");
+			}
+			int newQty = currentQty + count;
 			if (newQty > product.getQuantity()) {
-				newQty = product.getQuantity();
+				throw new RuntimeException("exceed_cart_limit");
 			}
 			if (newQty <= 0) {
 				cartDetailJPA.delete(cd);
@@ -136,6 +143,11 @@ public class CartDetailServices {
 		}
 
 		CartDetail cd = opt.get();
+		if (!product.isStatus() || product.getQuantity() <= 0) {
+			cartDetailJPA.delete(cd);
+			throw new RuntimeException("product_disabled");
+		}
+
 		if (quantity <= 0) {
 			cartDetailJPA.delete(cd);
 		} else {
@@ -216,6 +228,15 @@ public class CartDetailServices {
 			}
 			Product product = cd.getProduct();
 			if (product != null && product.isStatus()) {
+				// Tự động đồng bộ số lượng tồn kho thực tế
+				if (product.getQuantity() <= 0) {
+					cartDetailJPA.delete(cd);
+					continue;
+				}
+				if (cd.getQuantity() > product.getQuantity()) {
+					cd.setQuantity(product.getQuantity());
+					cartDetailJPA.save(cd);
+				}
 				items.add(new CartItemBean(product, cd.getQuantity()));
 			}
 		}
@@ -257,6 +278,15 @@ public class CartDetailServices {
 		List<CartDetail> details = cartDetailJPA.findByUserId(userId);
 		for (CartDetail cd : details) {
 			if (cd.getProduct() != null && cd.getProduct().isStatus()) {
+				Product product = cd.getProduct();
+				if (product.getQuantity() <= 0) {
+					cartDetailJPA.delete(cd);
+					continue;
+				}
+				if (cd.getQuantity() > product.getQuantity()) {
+					cd.setQuantity(product.getQuantity());
+					cartDetailJPA.save(cd);
+				}
 				count += cd.getQuantity();
 			}
 		}
@@ -276,7 +306,16 @@ public class CartDetailServices {
 		List<CartDetail> details = cartDetailJPA.findByUserId(userId);
 		for (CartDetail cd : details) {
 			if (cd.getProduct() != null && cd.getProduct().isStatus()) {
-				cartMap.put(cd.getProduct().getId(), cd.getQuantity());
+				Product product = cd.getProduct();
+				if (product.getQuantity() <= 0) {
+					cartDetailJPA.delete(cd);
+					continue;
+				}
+				if (cd.getQuantity() > product.getQuantity()) {
+					cd.setQuantity(product.getQuantity());
+					cartDetailJPA.save(cd);
+				}
+				cartMap.put(product.getId(), cd.getQuantity());
 			}
 		}
 		return cartMap;

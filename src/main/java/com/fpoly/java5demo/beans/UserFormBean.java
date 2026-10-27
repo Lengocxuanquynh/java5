@@ -34,6 +34,6 @@ public class UserFormBean {
 
 	private String address; // Địa chỉ mặc định (không bắt buộc)
 
-	private int role = 0; // 0: Khách hàng, 1: Quản trị viên
-	private boolean active = true;
+	private Integer role = 0; // 0: Khách hàng, 1: Quản trị viên
+	private Boolean active = true;
 }

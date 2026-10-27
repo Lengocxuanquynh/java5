@@ -10,8 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.fpoly.java5demo.beans.CategoryFormBean;
 import com.fpoly.java5demo.entities.Category;
@@ -20,28 +19,57 @@ import com.fpoly.java5demo.services.CategoryServices;
 import jakarta.validation.Valid;
 
 @Controller
-@RequestMapping("/admin")
 public class CategoryController {
 
 	@Autowired
 	private CategoryServices categoryServices;
 
-	@GetMapping({ "/categories", "/category-form" })
+	@Autowired
+	private com.fpoly.java5demo.services.ProductServices productServices;
+
+	@Autowired
+	private com.fpoly.java5demo.services.UserServices userServices;
+
+	@Autowired
+	private com.fpoly.java5demo.services.OrderServices orderServices;
+
+	private void populateDashboardData(Model model) {
+		model.addAttribute("productCount", productServices.getList().size());
+		model.addAttribute("categoryCount", categoryServices.getList().size());
+		model.addAttribute("userCount", userServices.getAllUsers().size());
+		model.addAttribute("orderCount", orderServices.getOrderCount());
+		model.addAttribute("pendingOrderCount", orderServices.getPendingOrderCount());
+		model.addAttribute("completedRevenue", orderServices.getCompletedRevenue());
+		model.addAttribute("recentOrders", orderServices.getRecentOrders(5));
+
+		model.addAttribute("products", productServices.getList());
+		model.addAttribute("categories", categoryServices.getList());
+		model.addAttribute("orders", orderServices.getAllOrders());
+		model.addAttribute("processingOrders", orderServices.getProcessingOrders());
+		model.addAttribute("completedOrders", orderServices.getCompletedOrders());
+		model.addAttribute("users", userServices.getAllUsers());
+	}
+
+	@GetMapping({ "/admin/categories", "/admin/category-form" })
 	public String listCategories() {
 		return "redirect:/admin?tab=categories";
 	}
 
-	@GetMapping("/category-form/{id}")
+	@GetMapping("/admin/category-form/{id}")
 	public String categoryUpdate(@PathVariable(name = "id") int id) {
 		return "redirect:/admin?tab=categories&editCatId=" + id;
 	}
 
-	@PostMapping("/category-form")
-	public String categorySave(@Valid @ModelAttribute("bean") CategoryFormBean bean, Errors errors,
-			Model model, RedirectAttributes redirectAttributes) {
+	@PostMapping("/admin/category-form")
+	public String categorySave(@Valid @ModelAttribute("categoryBean") CategoryFormBean bean, Errors errors,
+			Model model) {
 		if (errors.hasErrors()) {
-			redirectAttributes.addFlashAttribute("errorMessage", "Tên danh mục không được để trống!");
-			return "redirect:/admin?tab=categories";
+			populateDashboardData(model);
+			model.addAttribute("categoryBean", bean);
+			model.addAttribute("bean", bean);
+			model.addAttribute("productBean", new com.fpoly.java5demo.beans.ProductFormBean());
+			model.addAttribute("activeTab", "categories");
+			return "admin/dashboard";
 		}
 
 		try {
@@ -51,25 +79,33 @@ public class CategoryController {
 			} else {
 				categoryServices.addCategory(category);
 			}
-			redirectAttributes.addFlashAttribute("successMessage", "Lưu danh mục thành công!");
 		} catch (Exception e) {
 			e.printStackTrace();
-			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+			errors.rejectValue("name", "duplicate", e.getMessage() != null ? e.getMessage() : "Lỗi lưu danh mục!");
+			populateDashboardData(model);
+			model.addAttribute("categoryBean", bean);
+			model.addAttribute("bean", bean);
+			model.addAttribute("productBean", new com.fpoly.java5demo.beans.ProductFormBean());
+			model.addAttribute("activeTab", "categories");
+			return "admin/dashboard";
 		}
 
 		return "redirect:/admin?tab=categories";
 	}
 
-	@GetMapping("/category/delete/{id}")
-	public String deleteCategory(@PathVariable("id") int id, RedirectAttributes redirectAttributes) {
+	@PostMapping({ "/admin/category-delete", "/admin/category/delete" })
+	public String deleteCategory(@RequestParam("id") int id) {
 		try {
 			categoryServices.deleteCategory(id);
-			redirectAttributes.addFlashAttribute("successMessage", "Xóa danh mục thành công!");
 		} catch (Exception e) {
 			e.printStackTrace();
-			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
 		}
 		return "redirect:/admin?tab=categories";
+	}
+
+	@GetMapping("/admin/category/delete/{id}")
+	public String deleteCategoryGet(@PathVariable("id") int id) {
+		return deleteCategory(id);
 	}
 
 	@ModelAttribute("categories")

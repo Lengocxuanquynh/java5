@@ -113,20 +113,31 @@ public class ProductController {
 	}
 
 	@PostMapping("/admin/product-form")
-	public String productSave(@Valid @ModelAttribute("bean") ProductFormBean bean, Errors errors,
+	public String productSave(@Valid @ModelAttribute("productBean") ProductFormBean bean, Errors errors,
 			Model model) {
 		if (errors.hasErrors()) {
 			populateDashboardData(model);
 			model.addAttribute("productBean", bean);
+			model.addAttribute("bean", bean);
+			model.addAttribute("categoryBean", new CategoryFormBean());
 			model.addAttribute("activeTab", "products");
 			return "admin/dashboard";
 		}
 
-		Category category = categoryServices.getById(bean.getCategory());
+		Category category = null;
+		if (bean.getCategory() != null) {
+			try {
+				category = categoryServices.getById(bean.getCategory());
+			} catch (Exception e) {
+				category = null;
+			}
+		}
 		if (category == null) {
-			model.addAttribute("errorMessage", "Vui lòng chọn danh mục hợp lệ!");
+			errors.rejectValue("category", "invalid", "Vui lòng chọn danh mục hợp lệ!");
 			populateDashboardData(model);
 			model.addAttribute("productBean", bean);
+			model.addAttribute("bean", bean);
+			model.addAttribute("categoryBean", new CategoryFormBean());
 			model.addAttribute("activeTab", "products");
 			return "admin/dashboard";
 		}
@@ -144,9 +155,15 @@ public class ProductController {
 		}
 
 		product.setName(bean.getName());
-		product.setPrice(bean.getPrice());
-		product.setQuantity(bean.getQuantity());
-		product.setStatus(bean.getStatus() == 1);
+		product.setPrice(bean.getPrice() != null ? bean.getPrice() : 0);
+		int qty = (bean.getQuantity() != null) ? bean.getQuantity() : 0;
+		product.setQuantity(qty);
+		if (qty <= 0) {
+			product.setQuantity(0);
+			product.setStatus(false); // Số lượng = 0 thì tự động ẩn
+		} else {
+			product.setStatus(bean.getStatus() != null && bean.getStatus() == 1);
+		}
 		product.setCategory(category);
 		product.setDescription(bean.getDescription());
 		product.setDetail(bean.getDetail());
@@ -163,6 +180,8 @@ public class ProductController {
 			model.addAttribute("errorMessage", error);
 			populateDashboardData(model);
 			model.addAttribute("productBean", bean);
+			model.addAttribute("bean", bean);
+			model.addAttribute("categoryBean", new CategoryFormBean());
 			model.addAttribute("activeTab", "products");
 			return "admin/dashboard";
 		}

@@ -294,20 +294,22 @@
               </a>
             </div>
 
-            <form method="post" th:action="@{/admin/product-form}" th:object="${productBean}" enctype="multipart/form-data">
+            <form method="post" th:action="@{/admin/product-form}" th:object="${productBean}" enctype="multipart/form-data" novalidate>
               <input type="hidden" th:field="*{id}">
 
               <div class="row g-3">
                 <div class="col-md-6">
                   <label for="prodName" class="form-label small fw-semibold">Tên sản phẩm *</label>
-                  <input type="text" class="form-control" id="prodName" th:field="*{name}" placeholder="Ví dụ: Tai nghe Bluetooth chống ồn" required>
+                  <input type="text" class="form-control" id="prodName" th:field="*{name}" placeholder="Ví dụ: Tai nghe Bluetooth chống ồn"
+                         th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''">
                   <small class="text-danger" th:errors="*{name}"></small>
                 </div>
 
                 <div class="col-md-6">
                   <label for="prodCategory" class="form-label small fw-semibold">Danh mục *</label>
-                  <select th:field="*{category}" class="form-select" id="prodCategory" required>
-                    <option value="0">---- Chọn danh mục ----</option>
+                  <select th:field="*{category}" class="form-select" id="prodCategory"
+                          th:classappend="${#fields.hasErrors('category')} ? 'is-invalid' : ''">
+                    <option value="">---- Chọn danh mục ----</option>
                     <th:block th:each="cat : ${categories}">
                       <option th:value="${cat.id}" th:text="${cat.name}"></option>
                     </th:block>
@@ -317,13 +319,17 @@
 
                 <div class="col-md-6">
                   <label for="prodPrice" class="form-label small fw-semibold">Giá niêm yết (VNĐ) *</label>
-                  <input type="number" class="form-control" id="prodPrice" th:field="*{price}" min="1000" step="1000" required>
+                  <input type="number" class="form-control" id="prodPrice" th:field="*{price}"
+                         placeholder="Ví dụ: 100000"
+                         th:classappend="${#fields.hasErrors('price')} ? 'is-invalid' : ''">
                   <small class="text-danger" th:errors="*{price}"></small>
                 </div>
 
                 <div class="col-md-6">
                   <label for="prodQuantity" class="form-label small fw-semibold">Số lượng trong kho *</label>
-                  <input type="number" class="form-control" id="prodQuantity" th:field="*{quantity}" min="0" required>
+                  <input type="number" class="form-control" id="prodQuantity" th:field="*{quantity}"
+                         placeholder="Ví dụ: 10"
+                         th:classappend="${#fields.hasErrors('quantity')} ? 'is-invalid' : ''">
                   <small class="text-danger" th:errors="*{quantity}"></small>
                 </div>
 
@@ -453,14 +459,14 @@
                   <span th:unless="${categoryBean.id != null && categoryBean.id.isPresent()}">Thêm Danh Mục Mới</span>
                 </h5>
 
-                <form method="post" th:action="@{/admin/category-form}" th:object="${categoryBean}">
+                <form method="post" th:action="@{/admin/category-form}" th:object="${categoryBean}" novalidate>
                   <th:block th:if="*{id != null && id.isPresent()}">
                     <input type="hidden" name="id" th:value="*{id.get()}"/>
                   </th:block>
 
                   <div class="mb-3">
                     <label for="catName" class="form-label small fw-semibold">Tên danh mục sản phẩm *</label>
-                    <input th:field="*{name}" type="text" class="form-control" id="catName" placeholder="Ví dụ: Thiết Bị Âm Thanh" required>
+                    <input th:field="*{name}" type="text" class="form-control" id="catName" placeholder="Ví dụ: Thiết Bị Âm Thanh">
                     <small class="text-danger" th:errors="*{name}"></small>
                   </div>
 

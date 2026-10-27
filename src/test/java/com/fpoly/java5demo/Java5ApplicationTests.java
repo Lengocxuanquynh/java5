@@ -89,10 +89,10 @@ class Java5ApplicationTests {
 	}
 
 	@Autowired
-	private com.fpoly.java5demo.jpas.CategoryJPA categoryJPA;
+	private com.fpoly.java5demo.services.CategoryServices categoryServices;
 
 	@Autowired
-	private com.fpoly.java5demo.services.CategoryServices categoryServices;
+	private com.fpoly.java5demo.jpas.CategoryJPA categoryJPA;
 
 	@Autowired
 	private com.fpoly.java5demo.jpas.ProductJPA productJPA;

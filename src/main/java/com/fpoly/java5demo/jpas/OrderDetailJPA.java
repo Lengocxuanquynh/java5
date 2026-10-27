@@ -12,5 +12,8 @@ public interface OrderDetailJPA extends JpaRepository<OrderDetail, Integer> {
 	// [Vinh] Lấy chi tiết đơn hàng theo order_id
 	@Query(value = "SELECT * FROM order_details WHERE order_id = ?1", nativeQuery = true)
 	List<OrderDetail> findByOrderId(int orderId);
+
+	@Query(value = "SELECT COUNT(*) FROM order_details WHERE prod_id = ?1", nativeQuery = true)
+	long countByProductId(int productId);
 }
 
