@@ -67,12 +67,14 @@
               <input type="hidden" name="redirect" th:value="${redirect}">
 
               <div class="mb-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Tên đăng nhập</label>
                 <input type="text" class="form-control py-2" th:field="*{username}" placeholder="Tên đăng nhập (username)"
                        th:classappend="${#fields.hasErrors('username')} ? 'is-invalid' : ''">
                 <small class="text-danger" th:errors="*{username}"></small>
               </div>
 
               <div class="mb-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Mật khẩu</label>
                 <input type="password" class="form-control py-2" th:field="*{password}" placeholder="Mật khẩu"
                        th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''">
                 <small class="text-danger" th:errors="*{password}"></small>
