@@ -161,6 +161,10 @@ public class OrderServices {
 				detailList.add(savedDetail);
 
 				item.setQuantity(item.getQuantity() - buyQty);
+				if (item.getQuantity() <= 0) {
+					item.setQuantity(0);
+					item.setStatus(false); // Hết hàng trong kho -> tự động ẩn sản phẩm
+				}
 				productJPA.save(item);
 				deductedProducts.put(item, buyQty);
 			}
@@ -347,6 +351,10 @@ public class OrderServices {
 
 				// Trừ số lượng tồn kho
 				item.setQuantity(item.getQuantity() - buyQty);
+				if (item.getQuantity() <= 0) {
+					item.setQuantity(0);
+					item.setStatus(false); // Hết hàng trong kho -> tự động ẩn sản phẩm
+				}
 				productJPA.save(item);
 				deductedProducts.put(item, buyQty); // Ghi nhận lại sản phẩm và số lượng đã trừ kho
 			}

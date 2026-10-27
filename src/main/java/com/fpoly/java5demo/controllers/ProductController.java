@@ -146,7 +146,12 @@ public class ProductController {
 		product.setName(bean.getName());
 		product.setPrice(bean.getPrice());
 		product.setQuantity(bean.getQuantity());
-		product.setStatus(bean.getStatus() == 1);
+		if (bean.getQuantity() <= 0) {
+			product.setQuantity(0);
+			product.setStatus(false); // Số lượng = 0 thì tự động ẩn
+		} else {
+			product.setStatus(bean.getStatus() == 1);
+		}
 		product.setCategory(category);
 		product.setDescription(bean.getDescription());
 		product.setDetail(bean.getDetail());

@@ -83,6 +83,11 @@ public class ProductServices {
 				return "Trùng tên";
 			}
 
+			if (product.getQuantity() <= 0) {
+				product.setQuantity(0);
+				product.setStatus(false);
+			}
+
 			Product prodSave = productJPA.save(product);
 
 			if (images != null) {
@@ -116,6 +121,11 @@ public class ProductServices {
 			Optional<Product> prodOptional = productJPA.checkNameExist(product.getName(), product.getId());
 			if (prodOptional.isPresent()) {
 				return "Trùng tên";
+			}
+
+			if (product.getQuantity() <= 0) {
+				product.setQuantity(0);
+				product.setStatus(false);
 			}
 
 			Product prodSave = productJPA.save(product);
